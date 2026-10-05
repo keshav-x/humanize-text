@@ -2,12 +2,6 @@
 
 A lightweight, zero-dependency text transformation engine engineered to bypass statistical AI detection models (GPTZero Model 4o, ZeroGPT, QuillBot v7, Turnitin) by optimizing token perplexity and sentence-level burstiness while strictly preserving structural paragraph boundaries and technical precision.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-passing-brightgreen.svg)](test/engine.test.js)
-[![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-black.svg)](package.json)
-[![Zero Dependencies](https://img.shields.io/badge/dependencies-0-success.svg)](package.json)
-
----
 
 ## Overview
 
