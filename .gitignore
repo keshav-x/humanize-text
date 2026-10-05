@@ -28,5 +28,6 @@ Thumbs.db
 
 # Scratch / temporary artifacts
 scratch/
+scratch_build/
 __pycache__/
 *.pyc

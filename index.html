@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TextHuman — AI to Human Text Converter</title>
-  <meta name="description" content="Convert AI text to genuine human writing with 0% AI detection. Retains all facts and depth. Free, clean, and local." />
+  <title>TextHuman — 100% Free AI Text Humanizer</title>
+  <meta name="description" content="Single-source text humanizer synthesizing blader, epoko77, rudra496, DadaNanjesha, and lynote-ai. 100% Free, zero API key required, 100% fact retention with live ZeroGPT detection." />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -13,7 +13,7 @@
   <header class="app-header">
     <div class="header-brand">
       <span class="brand-name">TextHuman</span>
-      <span class="brand-tag">v2.0 · Free</span>
+      <span class="brand-tag">v2.0 · 100% Free</span>
     </div>
 
     <div class="header-controls">
@@ -21,9 +21,8 @@
       <div class="control-group">
         <span class="control-label">Tone:</span>
         <div class="segmented-tabs" id="mode-tabs">
-          <button class="tab-btn active" data-mode="natural" id="tab-natural">Natural</button>
-          <button class="tab-btn" data-mode="academic" id="tab-academic">Academic</button>
-          <button class="tab-btn" data-mode="creative" id="tab-creative">Conversational</button>
+          <button class="tab-btn active" data-mode="natural" id="tab-natural" title="Conversational active prose with natural contractions">Natural</button>
+          <button class="tab-btn" data-mode="academic" id="tab-academic" title="Formal academic diction and objective syntax">Academic</button>
         </div>
       </div>
 
@@ -31,8 +30,8 @@
       <div class="control-group">
         <span class="control-label">Engine:</span>
         <div class="segmented-tabs" id="engine-tabs">
-          <button class="tab-btn active" data-engine="offline" id="tab-offline">Local Engine</button>
-          <button class="tab-btn" data-engine="ai" id="tab-ai">AI API</button>
+          <button class="tab-btn active" data-engine="local" id="tab-local" title="Single-Source Engine: 100% Free, runs in your browser with zero API key required">Local (Free · No Key)</button>
+          <button class="tab-btn" data-engine="ai" id="tab-ai" title="Optional: Use your own Google Gemini or Groq API key">Custom API Key</button>
         </div>
       </div>
 
@@ -90,7 +89,7 @@
 
         <div class="rail-status" id="spinner" style="display:none;">
           <div class="loader-circle"></div>
-          <span class="loader-label" id="spin-text">Optimizing text...</span>
+          <span class="loader-label" id="spin-text">Humanizing text...</span>
         </div>
       </div>
 
@@ -100,9 +99,16 @@
           <div class="pane-meta">
             <span class="pane-title">Human Writing</span>
             <span class="count-label" id="output-word-count">0 words</span>
-            <span class="status-indicator pass" id="result-status-badge" style="display:none;">0% AI Verified</span>
+            <span class="status-indicator pass" id="result-status-badge" style="display:none;">Human Written</span>
           </div>
           <div class="pane-actions">
+            <button class="action-btn" id="btn-verify-detector" title="Check score against live ZeroGPT detector">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <span>Verify ZeroGPT Live</span>
+            </button>
             <button class="action-btn primary" id="btn-copy">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -127,17 +133,16 @@
           class="editor-textarea output-area"
           contenteditable="true"
           spellcheck="false"
-          data-placeholder="Humanized output will appear here. Full points preserved, 0% AI detection."
+          data-placeholder="Your humanized text will appear here."
         ></div>
 
         <div class="pane-footer">
           <div class="stats-row" id="score-row" style="display:none;">
-            <span class="stat-pill"><span class="stat-name">AI Score:</span> <strong id="stat-ai-score" class="good">0%</strong></span>
-            <span class="stat-pill"><span class="stat-name">ZeroGPT:</span> <span id="stat-zerogpt">Passed</span></span>
-            <span class="stat-pill"><span class="stat-name">QuillBot:</span> <span id="stat-quillbot">Passed</span></span>
-            <span class="stat-pill"><span class="stat-name">Points Preserved:</span> <span>100%</span></span>
+            <span class="stat-pill"><span class="stat-name">Engine:</span> <strong id="stat-engine">Local (Free)</strong></span>
+            <span class="stat-pill" title="Live statistical detection score from ZeroGPT API"><span class="stat-name">ZeroGPT Live:</span> <strong id="stat-zerogpt" class="good">0.0% AI</strong></span>
+            <span class="stat-pill"><span class="stat-name">Facts Retained:</span> <strong id="stat-facts" class="good">100%</strong></span>
           </div>
-          <span class="footer-meta" id="output-empty-hint">Ready for conversion</span>
+          <span class="footer-meta" id="output-empty-hint">Ready for conversion · 100% Free · No API key required</span>
         </div>
       </section>
 
@@ -145,20 +150,24 @@
 
   </main>
 
-  <!-- Settings Modal (Clean Utilitarian) -->
+  <!-- Settings Modal (Optional Custom API Keys) -->
   <div class="modal-backdrop" id="modal-settings">
     <div class="modal-dialog">
       <div class="dialog-header">
-        <h2 class="dialog-title">AI Engine Configuration</h2>
+        <h2 class="dialog-title">Optional Custom AI Key Settings</h2>
         <button class="dialog-close" id="btn-close-modal">✕</button>
       </div>
 
       <div class="dialog-body">
+        <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 4px;">
+          <strong>Note:</strong> You do <em>not</em> need an API key to use TextHuman. The default <strong>Local Engine</strong> is 100% free, runs client-side, and requires no key. Only configure this if you wish to use your own personal LLM endpoint.
+        </p>
+
         <div class="form-row">
           <label class="field-label">Provider</label>
           <div class="provider-toggle">
-            <button class="provider-option active" data-provider="gemini" id="provider-gemini">Google Gemini (Free)</button>
-            <button class="provider-option" data-provider="groq" id="provider-groq">Groq Llama 3.3 (Free)</button>
+            <button class="provider-option active" data-provider="gemini" id="provider-gemini">Google Gemini (Free Tier)</button>
+            <button class="provider-option" data-provider="groq" id="provider-groq">Groq Llama 3.3 (Free Tier)</button>
           </div>
         </div>
 
@@ -174,13 +183,13 @@
               type="password"
               id="input-api-key"
               class="field-input"
-              placeholder="Paste API key here..."
+              placeholder="Paste optional API key here..."
               autocomplete="off"
             />
             <button class="btn-secondary" id="btn-test-key">Test</button>
           </div>
           <div class="field-status" id="key-status-msg"></div>
-          <span class="field-hint">Your key is stored locally in your browser storage. It is never transmitted to any third party.</span>
+          <span class="field-hint">Stored strictly in your local browser storage. Never transmitted to any intermediate server.</span>
         </div>
 
         <div class="form-row">
@@ -205,14 +214,14 @@
   <!-- Toast Notification -->
   <div class="status-toast" id="toast"></div>
 
-  <!-- Minimal Utilitarian Footer -->
+  <!-- Utilitarian Footer -->
   <footer class="app-footer">
     <div class="footer-content">
-      <span>TextHuman — Free AI Text Humanizer</span>
+      <span>TextHuman v2.0 — Single-Source Open-Source Text Humanizer</span>
       <span class="footer-sep">·</span>
-      <span>100% Local in-browser execution</span>
+      <span>100% Free · Zero API Key Required</span>
       <span class="footer-sep">·</span>
-      <a href="#privacy" id="link-privacy" class="footer-link">Privacy & Terms</a>
+      <span>Live ZeroGPT Detector Integration</span>
     </div>
   </footer>
 
