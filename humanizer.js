@@ -8871,11 +8871,39 @@ async function checkZeroGPTLive(text) {
 
   try {
     const headers = { 'Content-Type': 'application/json' };
-    if (typeof window === 'undefined') {
+
+    // In a browser, check if our local proxy endpoint is available (e.g. running via node server.js)
+    if (typeof window !== 'undefined') {
+      try {
+        const proxyCheck = await fetch('/api/zerogpt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ input_text: text })
+        });
+        if (proxyCheck.ok) {
+          const json = await proxyCheck.json();
+          const data = json.data || {};
+          if (typeof data.fakePercentage === 'number') {
+            return {
+              success: true,
+              fakePercentage: data.fakePercentage,
+              feedback: data.feedback || '',
+              isHuman: typeof data.isHuman === 'number' ? data.isHuman : (100 - data.fakePercentage),
+              aiWords: data.aiWords || 0,
+              textWords: data.textWords || 0,
+              flagged: Array.isArray(data.specialSentences) ? data.specialSentences : []
+            };
+          }
+        }
+      } catch (proxyErr) {
+        // Fall back to direct fetch attempt
+      }
+    } else {
       headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
       headers['Referer'] = 'https://www.zerogpt.com/';
       headers['Origin'] = 'https://www.zerogpt.com';
     }
+
     const res = await fetch('https://api.zerogpt.com/api/detect/detectText', {
       method: 'POST',
       headers,
@@ -8885,7 +8913,7 @@ async function checkZeroGPTLive(text) {
 
     const json = await res.json();
     const data = json.data || {};
-    if (typeof data.fakePercentage !== 'number') return unavailable('Detector gave no score');
+    if (typeof data.fakePercentage !== 'number') return unavailable(json.message || 'Detector gave no score');
 
     return {
       success: true,
@@ -8897,7 +8925,7 @@ async function checkZeroGPTLive(text) {
       flagged: Array.isArray(data.specialSentences) ? data.specialSentences : []
     };
   } catch (err) {
-    return unavailable('Detector unreachable from this browser');
+    return unavailable('Direct browser fetch blocked by ZeroGPT paywall (Run node server.js or click Open ZeroGPT)');
   }
 }
 

@@ -110,6 +110,14 @@
               </svg>
               <span>Verify ZeroGPT Live</span>
             </button>
+            <button class="action-btn" id="btn-open-zerogpt" title="Copy output and open official ZeroGPT website in new tab">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              <span>Open ZeroGPT</span>
+            </button>
             <button class="action-btn primary" id="btn-copy">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -140,7 +148,9 @@
         <div class="pane-footer">
           <div class="stats-row" id="score-row" style="display:none;">
             <span class="stat-pill"><span class="stat-name">Engine:</span> <strong id="stat-engine">-</strong></span>
-            <span class="stat-pill" title="Live score from the ZeroGPT API. Shows 'Unverified' if the detector can't be reached."><span class="stat-name">ZeroGPT Live:</span> <strong id="stat-zerogpt">-</strong></span>
+            <span class="stat-pill" title="Local multi-metric AI probability heuristic calculated directly in browser"><span class="stat-name">Local AI Prob:</span> <strong id="stat-local-prob">0.0%</strong></span>
+            <span class="stat-pill" title="Sentence length standard deviation variance across the paragraph"><span class="stat-name">Burstiness:</span> <strong id="stat-burstiness">-</strong></span>
+            <span class="stat-pill" title="Live score from ZeroGPT API. Shows 'Unverified' if direct browser call is blocked by CORS. Run node server.js for live integration."><span class="stat-name">ZeroGPT Live:</span> <strong id="stat-zerogpt">-</strong></span>
             <span class="stat-pill"><span class="stat-name">Facts Retained:</span> <strong id="stat-facts">-</strong></span>
           </div>
           <span class="footer-meta" id="output-empty-hint">Ready for conversion · 100% Free · No API key required</span>

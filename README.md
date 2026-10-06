@@ -230,20 +230,18 @@ console.log(`Missing Anchors: ${missing.length === 0 ? 'None (100% Retained)' : 
 
 The web interface is pure HTML5, CSS3, and modern JavaScript.
 
-### Direct Launch
-Double-click `index.html` or open it from your file manager in any modern web browser.
+### Recommended: Live ZeroGPT Proxy Server
 
-### Via Local Server
+ZeroGPT blocks direct in-browser calls via CORS paywalls. Run the built-in zero-dependency Node relay server to enable live in-browser ZeroGPT checks:
 
 ```bash
-# Python 3
-python -m http.server 8080
-
-# Node.js
-npx serve .
+node server.js
 ```
 
-Navigate to `http://localhost:8080` in your browser.
+Open `http://localhost:3000` in your browser.
+
+### Direct Launch (Offline)
+Double-click `index.html` or open it from your file manager in any modern web browser. You can click **Open ZeroGPT** in the UI to verify on the official site with 1 click.
 
 ---
 
@@ -255,6 +253,7 @@ humanize-text/
 ├── style.css         # Responsive styling and theme tokens
 ├── app.js            # Frontend controller, state management, and export handlers
 ├── humanizer.js      # Core transformation engine and detection heuristics
+├── server.js         # Zero-dependency local server and ZeroGPT CORS relay proxy
 ├── LICENSE           # MIT License
 └── README.md         # Architecture and technical documentation
 ```

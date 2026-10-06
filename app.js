@@ -72,8 +72,11 @@
   const outputEmptyHint    = document.getElementById('output-empty-hint');
   const statEngine         = document.getElementById('stat-engine');
   const statZeroGpt        = document.getElementById('stat-zerogpt');
+  const statLocalProb      = document.getElementById('stat-local-prob');
+  const statBurstiness     = document.getElementById('stat-burstiness');
   const statFacts          = document.getElementById('stat-facts');
   const resultStatusBadge  = document.getElementById('result-status-badge');
+  const btnOpenZeroGpt     = document.getElementById('btn-open-zerogpt');
 
   // Tabs
   const modeTabBtns        = document.querySelectorAll('#mode-tabs .tab-btn');
@@ -240,6 +243,18 @@
     if (btnVerifyDetector) {
       btnVerifyDetector.addEventListener('click', handleManualVerifyDetector);
     }
+    if (btnOpenZeroGpt) {
+      btnOpenZeroGpt.addEventListener('click', async () => {
+        const text = (outputEl.innerText || outputEl.textContent || '').trim();
+        if (!text) {
+          showToast('No text to verify. Click Convert first.');
+          return;
+        }
+        await copyText(text);
+        window.open('https://www.zerogpt.com/', '_blank', 'noopener');
+        showToast('Text copied! Opening ZeroGPT in a new tab...', 4000);
+      });
+    }
 
     // Prompt Kit
     document.getElementById('btn-close-prompt').addEventListener('click', closePromptModal);
@@ -362,6 +377,21 @@
     if (outputEmptyHint) outputEmptyHint.style.display = 'none';
     if (scoreRow) scoreRow.style.display = 'flex';
     if (statEngine) statEngine.textContent = engineName;
+
+    // Local Detection Metrics
+    const localProb = TextHumanizer.calculateAiProbability(resultText);
+    const sents = TextHumanizer.splitIntoSentences(resultText);
+    const burstVal = TextHumanizer.calculateBurstiness(sents);
+
+    if (statLocalProb) {
+      statLocalProb.textContent = `${localProb.toFixed(1)}% AI`;
+      statLocalProb.className = localProb <= 15 ? 'good' : (localProb <= 35 ? 'warn' : '');
+    }
+
+    if (statBurstiness) {
+      statBurstiness.textContent = `${burstVal.toFixed(1)}%`;
+      statBurstiness.className = burstVal >= 70 ? 'good' : (burstVal >= 50 ? '' : 'warn');
+    }
 
     if (statFacts) {
       if (missingAnchors.length === 0) {
