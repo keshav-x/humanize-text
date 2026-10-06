@@ -96,7 +96,7 @@ TextHuman executes a deterministic multi-stage linguistic pipeline that operates
 
 ---
 
-## The 6 Advanced Anti-Detection Techniques
+## The 8 Advanced Anti-Detection Techniques
 
 ### 1. Active Voice Inversion & De-Passivization
 AI models default to passive, agentless constructions to remain neutral. TextHuman scans for and rewrites passive verb forms into direct, active verbs (`is designed to` $\to$ `aims to`, `can be achieved by` $\to$ `comes from`, `is required in order to` $\to$ `must`).
@@ -115,6 +115,12 @@ Calculates sentence-level token variance. If adjacent sentences have similar wor
 
 ### 6. De-Nominalization of Definition Openers
 Eliminates robotic textbook dictionary openings (e.g., *"Python is an interpreted language that..."* or *"Docker is a platform designed to..."*) in favor of immediate operational tension or contextual scene setting.
+
+### 7. Structural Bullet Colon De-Structuring
+LLMs exhibit a distinct organizational fingerprint when producing lists: `* [Gerund/Heading]: [Explanation with formal clauses]`. TextHuman dissolves rigid colon-heading outlines into natural imperative statements or fluid sentences with dynamic punctuation (`* Lower starting friction. Cutting down the effort needed to begin ensures...`), breaking the structural outline pattern detectors rely on.
+
+### 8. Rhetorical Antithesis & Nominalization Purge
+Automatically detects and collapses AI-favored rhetorical antitheses (`is not born from X, but from Y` $\to$ `comes down to Y, not X`). Unpacks dense Latinate self-help and academic nominalizations (*"cognitive bandwidth"*, *"the pursuit of discipline"*, *"sustainable execution"*, *"analysis paralysis"*) into grounded, active phrasing.
 
 ---
 

@@ -168,6 +168,9 @@ const AI_TELL_PATTERNS = [
   [/\bnot only ([^,]+),? but also ([^.]+)\b/gi, 'both $1 and $2'],
   [/\bnot only ([^,]+) but ([^.]+)\b/gi, '$1 as well as $2'],
   [/\bit is not ([^,]+),? (?:but|rather) ([^.]+)\b/gi, '$2 instead of $1'],
+  [/\b(?:is|are|was|were)\s+not\s+(?:born\s+from|driven\s+by|rooted\s+in|about|a\s+matter\s+of)\s+([^,]+),\s*(?:but|rather)\s+(?:from|about|by|in|a\s+matter\s+of)?\s*([^.]+)\b/gi, 'comes down to $2, not $1'],
+  [/\b(?:is|are)\s+less\s+about\s+([^,]+)\s+and\s+more\s+about\s+([^.]+)\b/gi, 'comes down to $2 rather than $1'],
+  [/\b(?:not\s+merely|not\s+just)\s+([^,]+),?\s+but\s+(?:also\s+)?([^.]+)\b/gi, 'both $1 and $2'],
   [/\*\*([^\*]+)\*\*:\s*/g, '$1: '],
   [/\bIn today's(?:\s+[\w-]+){0,3}\s+(?:world|landscape|environment|society|market|workplace|era)[,]?\s*/gi, 'Today, '],
   [/\bIn the realm of\s+/gi, 'In '],
@@ -176,13 +179,41 @@ const AI_TELL_PATTERNS = [
   [/\bplays? a (?:crucial|pivotal|vital|key|significant|important) role in\b/gi, 'matters in'],
   [/\bstands? as a (?:testament|beacon|symbol) (?:of|to|for)\b/gi, 'shows'],
   [/\bserves as a\b/gi, 'is a'],
-  [/\bnavigat(?:e|es|ing) the (?:complexities|challenges|landscape) of\b/gi, 'dealing with'],
+  [/\bnavigating the (?:complexities|challenges|landscape) of\b/gi, 'dealing with'],
+  [/\bnavigates the (?:complexities|challenges|landscape) of\b/gi, 'deals with'],
+  [/\bnavigate the (?:complexities|challenges|landscape) of\b/gi, 'deal with'],
   [/\bat the (?:heart|core|forefront) of\b/gi, 'central to'],
   [/\b(?:Moreover|Furthermore|Additionally|In addition|Consequently|Notably|Importantly),\s*/gi, ''],
   [/\b[Ii]t is (?:crucial|essential|vital|pivotal|imperative) (?:for|to|that)\b/g, 'it helps to'],
   [/\bdrastically (?:reduces|decreases|diminishes)\b/gi, 'cuts down'],
   [/\bfrequently struggle with\b/gi, 'often run into'],
-  [/\ba wide (?:variety|range) of\b/gi, 'many']
+  [/\ba wide (?:variety|range) of\b/gi, 'many'],
+  [/\bThe pursuit of ([a-z]+) often begins with\b/gi, 'Building real $1 often starts with'],
+  [/\bReal progress depends on\b/gi, 'Real progress comes down to'],
+  [/\bDeveloping this consistency requires\b/gi, 'Building this kind of consistency takes'],
+  [/\bprevents mental fatigue and analysis paralysis\b/gi, 'prevents overthinking and mental fatigue'],
+  [/\bSteady, incremental gains compound over time\b/gi, 'Small steady wins compound over time'],
+  [/\byielding resilience and tangible mastery\b/gi, 'building resilience and genuine skill'],
+  [/\bChoosing process over preference\b/gi, 'Focusing on routine over mood'],
+  [/\bturns consistency into an automatic reflex rather than a daily negotiation\b/gi, 'makes consistency second nature instead of an internal debate'],
+  [/\bin\s+the\s+deliberate\s+repetition\s+of\s+quiet,\s*ordinary\s+choices\b/gi, 'in repeating small, unglamorous choices daily'],
+  [/\bthe\s+deliberate\s+repetition\s+of\s+quiet,\s*ordinary\s+choices\b/gi, 'repeating small, unglamorous choices daily'],
+  [/\bdeliberate\s+repetition\s+of\s+quiet,\s*ordinary\s+choices\b/gi, 'repeating small, unglamorous choices daily'],
+  [/\ballowing deliberate action to outlast fleeting enthusiasm\b/gi, 'letting deliberate action outlast initial enthusiasm'],
+  [/\bshifts from an emotional struggle to an automated habit\b/gi, 'shifts from an emotional battle to an automatic routine'],
+  [/\banchored to predictable routines rather than momentary impulse\b/gi, 'tied to predictable routines instead of momentary mood'],
+  [/\bbalancing structure with strategic focus\b/gi, 'balancing clear structure with focus'],
+  [/\bprotects cognitive bandwidth from constant interruptions\b/gi, 'protects mental energy from constant distractions'],
+  [/\bsharpens concentration and elevates output quality\b/gi, 'sharpens concentration and lifts the quality of work'],
+  [/\bSustainable execution relies on\b/gi, 'Staying consistent relies on'],
+  [/\berratic bursts of hyper-productivity\b/gi, 'erratic bursts of intense work'],
+  [/\bRecogni[sz]ing that peak conditions rarely exist\b/gi, 'Knowing that ideal conditions rarely exist'],
+  [/\ballows execution to continue regardless of external circumstances\b/gi, 'lets you keep working regardless of circumstances'],
+  [/\bAt the end of the day,\s*/gi, 'In reality, '],
+  [/\bIt goes without saying that\s*/gi, 'Naturally, '],
+  [/\bNeedless to say,\s*/gi, 'Naturally, '],
+  [/\bIt is worth mentioning that\s*/gi, 'Notably, '],
+  [/\bIt is important to remember that\s*/gi, 'Remember, ']
 ];
 
 function stripAITells(text) {
@@ -194,6 +225,246 @@ function stripAITells(text) {
 }
 // ── 4. Collocations & AI Lexicon Purge ──────────────────────────────────────────
 const COLLOCATIONS = [
+  {
+    "from": "the pursuit of discipline",
+    "to": ["building real discipline", "practicing discipline", "working on discipline"]
+  },
+  {
+    "from": "grand gestures",
+    "to": ["big declarations", "grand promises", "dramatic gestures"]
+  },
+  {
+    "from": "in the deliberate repetition of",
+    "to": ["in repeating", "in sticking with", "in the daily repetition of"]
+  },
+  {
+    "from": "the deliberate repetition of",
+    "to": ["repeating", "sticking with", "the daily repetition of"]
+  },
+  {
+    "from": "deliberate repetition of",
+    "to": ["repeating", "sticking with", "daily repetition of"]
+  },
+  {
+    "from": "quiet, ordinary choices",
+    "to": ["small daily choices", "routine decisions", "ordinary everyday choices"]
+  },
+  {
+    "from": "opening spark",
+    "to": ["initial spark", "starting spark", "first spark"]
+  },
+  {
+    "from": "ambitious targets",
+    "to": ["big targets", "ambitious goals", "high goals"]
+  },
+  {
+    "from": "notoriously volatile",
+    "to": ["fickle", "quick to fade", "hard to rely on"]
+  },
+  {
+    "from": "physical fatigue",
+    "to": ["tiredness", "fatigue", "exhaustion"]
+  },
+  {
+    "from": "routine monotony",
+    "to": ["day-to-day monotony", "routine boredom", "routine repetition"]
+  },
+  {
+    "from": "eliminate friction",
+    "to": ["cut down friction", "remove friction", "lower friction"]
+  },
+  {
+    "from": "outlast fleeting enthusiasm",
+    "to": ["outlast initial excitement", "keep going when excitement fades", "outlast fleeting motivation"]
+  },
+  {
+    "from": "emotional struggle",
+    "to": ["mental battle", "emotional friction", "daily struggle"]
+  },
+  {
+    "from": "automated habit",
+    "to": ["automatic routine", "steady habit", "automatic reflex"]
+  },
+  {
+    "from": "anchored to predictable routines",
+    "to": ["tied to steady routines", "anchored to regular habits", "built on predictable routines"]
+  },
+  {
+    "from": "momentary impulse",
+    "to": ["fleeting mood", "momentary impulse", "how you feel in the moment"]
+  },
+  {
+    "from": "balancing structure with strategic focus",
+    "to": ["balancing clear structure with focus", "mixing structure with clear priorities"]
+  },
+  {
+    "from": "lowering initial inertia",
+    "to": ["cutting starting friction", "lowering initial resistance", "making it easy to start"]
+  },
+  {
+    "from": "initial inertia",
+    "to": ["starting friction", "starting resistance", "the initial hurdle"]
+  },
+  {
+    "from": "reducing the friction required to start a task",
+    "to": ["cutting down the effort needed to begin", "making starting as painless as possible", "lowering the friction to get going"]
+  },
+  {
+    "from": "breaking complex objectives into small, measurable actions",
+    "to": ["breaking big goals into small, clear steps", "splitting large tasks into bite-sized actions"]
+  },
+  {
+    "from": "mental fatigue and analysis paralysis",
+    "to": ["mental drain and analysis paralysis", "overthinking and burnout", "indecision and fatigue"]
+  },
+  {
+    "from": "structuring intentional boundaries",
+    "to": ["setting firm boundaries", "building clear boundaries", "drawing intentional boundaries"]
+  },
+  {
+    "from": "focused, single-task work",
+    "to": ["single-task deep work", "single-task focus", "uninterrupted focus"]
+  },
+  {
+    "from": "cognitive bandwidth",
+    "to": ["mental energy", "focus", "working memory"]
+  },
+  {
+    "from": "constant interruptions",
+    "to": ["frequent interruptions", "constant distractions", "ongoing disruptions"]
+  },
+  {
+    "from": "digital distractions",
+    "to": ["notifications and tabs", "online distractions", "screen distractions"]
+  },
+  {
+    "from": "sharpens concentration and elevates output quality",
+    "to": ["clears concentration and lifts work quality", "sharpens focus and improves output"]
+  },
+  {
+    "from": "prioritising momentum over intensity",
+    "to": ["choosing momentum over burnout", "favoring momentum over intensity"]
+  },
+  {
+    "from": "prioritizing momentum over intensity",
+    "to": ["choosing momentum over burnout", "favoring momentum over intensity"]
+  },
+  {
+    "from": "sustainable execution",
+    "to": ["real consistency", "steady consistency", "sustainable work"]
+  },
+  {
+    "from": "erratic bursts of hyper-productivity",
+    "to": ["chaotic all-nighters", "erratic bursts of overtime", "random intense sprints"]
+  },
+  {
+    "from": "steady, incremental gains compound over time",
+    "to": ["small steady gains compound over time", "steady incremental wins add up"]
+  },
+  {
+    "from": "yielding resilience and tangible mastery",
+    "to": ["building resilience and real skill", "yielding resilience and actual mastery"]
+  },
+  {
+    "from": "decoupling output from mood",
+    "to": ["separating work from mood", "unhooking output from how you feel", "detaching work from mood"]
+  },
+  {
+    "from": "peak conditions rarely exist",
+    "to": ["ideal conditions rarely happen", "conditions are rarely perfect", "perfect timing is rare"]
+  },
+  {
+    "from": "allows execution to continue regardless of external circumstances",
+    "to": ["lets execution continue no matter what happens around you", "keeps work moving forward regardless of circumstances"]
+  },
+  {
+    "from": "choosing process over preference",
+    "to": ["choosing routine over mood", "putting process ahead of mood", "prioritizing the process over preference"]
+  },
+  {
+    "from": "turns consistency into an automatic reflex rather than a daily negotiation",
+    "to": ["makes consistency second nature instead of an internal debate", "turns consistency into an automatic reflex rather than a debate"]
+  },
+  {
+    "from": "sustained achievement",
+    "to": ["long-term success", "lasting achievement", "long-term progress"]
+  },
+  {
+    "from": "extraordinary willpower",
+    "to": ["raw willpower", "pure willpower", "heroic willpower"]
+  },
+  {
+    "from": "unrelenting consistency",
+    "to": ["showing up every day", "steady consistency", "unwavering consistency"]
+  },
+  {
+    "from": "immediate gratification",
+    "to": ["quick gratification", "short-term gratification", "instant payoff"]
+  },
+  {
+    "from": "cumulative effect of",
+    "to": ["compounded effect of", "result of stacking", "sum of"]
+  },
+  {
+    "from": "executed with precision",
+    "to": ["carried out with care", "done with precision", "executed with quiet focus"]
+  },
+  {
+    "from": "quiet patience",
+    "to": ["calm patience", "patient persistence", "quiet persistence"]
+  },
+  {
+    "from": "unwavering commitment",
+    "to": ["consistent commitment", "steady commitment", "sticking with it"]
+  },
+  {
+    "from": "is not born from",
+    "to": ["does not come from", "is rarely born from"]
+  },
+  {
+    "from": "delve into",
+    "to": ["look into", "explore", "dig into"]
+  },
+  {
+    "from": "beacon of",
+    "to": ["clear example of", "symbol of"]
+  },
+  {
+    "from": "testament to",
+    "to": ["proof of", "sign of"]
+  },
+  {
+    "from": "tapestry of",
+    "to": ["mix of", "combination of"]
+  },
+  {
+    "from": "pivotal role",
+    "to": ["key role", "critical role"]
+  },
+  {
+    "from": "in order to",
+    "to": ["to"]
+  },
+  {
+    "from": "with respect to",
+    "to": ["regarding", "on"]
+  },
+  {
+    "from": "in light of the fact that",
+    "to": ["because", "since"]
+  },
+  {
+    "from": "it is crucial to",
+    "to": ["it helps to", "you need to"]
+  },
+  {
+    "from": "at the forefront of",
+    "to": ["leading", "central to"]
+  },
+  {
+    "from": "serves as a reminder that",
+    "to": ["reminds us that"]
+  },
   {
     "from": "fundamentally altered",
     "to": ["reshaped", "shifted", "transformed", "changed"]
@@ -8244,6 +8515,25 @@ function swapSafeSynonyms(text, probability = 0.12) {
     }
 
     const lower = word.toLowerCase();
+    const nextNonEmpty = (words.slice(i + 1).find(w => w && !/^\s+$/.test(w)) || '').toLowerCase().replace(/[^a-z]/g, '');
+    const prevNonEmpty = (words.slice(0, i).reverse().find(w => w && !/^\s+$/.test(w)) || '').toLowerCase().replace(/[^a-z]/g, '');
+    if (lower === 'instead' && nextNonEmpty === 'of') {
+      result.push(word);
+      continue;
+    }
+    if (lower === 'rather' && nextNonEmpty === 'than') {
+      result.push(word);
+      continue;
+    }
+    if (lower === 'after' && (prevNonEmpty === 'day' || nextNonEmpty === 'day')) {
+      result.push(word);
+      continue;
+    }
+    if (lower === 'time' && (nextNonEmpty === 'block' || nextNonEmpty === 'blocks' || nextNonEmpty === 'frame' || nextNonEmpty === 'frames')) {
+      result.push(word);
+      continue;
+    }
+
     const candidateList = SYNONYMS[lower];
     if (candidateList && candidateList.length > 0 && Math.random() < probability) {
       // Pick a single-word synonym
@@ -8462,20 +8752,25 @@ function swapSubordinateClause(sentence) {
   const m = sentence.match(/^(Because|Since|Although|Though|While|Whereas|If|When|Unless|After|Before) ([^,;]{10,}?), ([^,].{15,}?)([.!?])$/);
   if (!m) return sentence;
   const [, conj, clause, main, punct] = m;
+  // If main clause starts with a pronoun referring back to the subordinate clause, DO NOT swap
+  if (/^(it|it's|they|they're|he|she|this|these|its|their)\b/i.test(main.trim())) return sentence;
   if (/^(and|but|which|so|yet|then)\b/i.test(main)) return sentence;
   const needsComma = /^(Although|Though|While|Whereas)$/.test(conj);
   return upperFirst(main) + (needsComma ? ', ' : ' ') + conj.toLowerCase() + ' ' + clause + punct;
 }
 
 function splitLongSentence(sentence) {
-  if (wc(sentence) < 24) return [sentence];
-  const m = sentence.match(/,\s+(and|but|so|yet)\s+/i);
-  if (!m || m.index < 40 || m.index > sentence.length - 30) return [sentence];
-  const head = sentence.slice(0, m.index).trim() + '.';
-  const word = m[1].toLowerCase();
-  const tail = sentence.slice(m.index + m[0].length).trim();
-  const keep = (word === 'but' || word === 'yet') ? upperFirst(word) + ' ' + tail : upperFirst(tail);
-  return [head, keep];
+  const wordCount = wc(sentence);
+  if (wordCount < 16) return [sentence];
+  const m = sentence.match(/,\s+(and|but|so|yet|while|whereas)\s+/i);
+  if (m && m.index >= 20 && m.index <= sentence.length - 20) {
+    const head = sentence.slice(0, m.index).trim() + '.';
+    const word = m[1].toLowerCase();
+    const tail = sentence.slice(m.index + m[0].length).trim();
+    const keep = (word === 'but' || word === 'yet' || word === 'so') ? upperFirst(word) + ' ' + tail : upperFirst(tail);
+    return [head, keep];
+  }
+  return [sentence];
 }
 
 function mergeShortNeighbours(sents) {
@@ -8724,12 +9019,54 @@ function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   return restoreProtectedEntities(joined, protectedItems);
 }
 
+function destructureBulletHeadings(rawText, style) {
+  const GERUND_TO_IMPERATIVE = {
+    'lowering': 'lower',
+    'reducing': 'reduce',
+    'structuring': 'structure',
+    'prioritising': 'prioritise',
+    'prioritizing': 'prioritize',
+    'decoupling': 'decouple',
+    'balancing': 'balance',
+    'managing': 'manage',
+    'creating': 'create',
+    'building': 'build',
+    'maintaining': 'maintain',
+    'establishing': 'establish',
+    'cultivating': 'cultivate',
+    'developing': 'develop',
+    'maximizing': 'maximize',
+    'minimizing': 'minimize',
+    'fostering': 'foster',
+    'choosing': 'choose',
+    'setting': 'set',
+    'cutting': 'cut'
+  };
+
+  return rawText.split('\n').map(line => {
+    const m = line.match(/^(\s*[*•\-\d]+\.?|[a-zA-Z]\))\s+([^:\n]{3,60}):\s+(.+)$/);
+    if (!m) return line;
+    const [, bullet, heading, body] = m;
+    const firstWord = heading.trim().split(/\s+/)[0].toLowerCase();
+    
+    if (GERUND_TO_IMPERATIVE[firstWord] && style !== 'academic') {
+      const restHeading = heading.trim().slice(firstWord.length).trim();
+      const imperativeHeading = GERUND_TO_IMPERATIVE[firstWord].charAt(0).toUpperCase() 
+        + GERUND_TO_IMPERATIVE[firstWord].slice(1) 
+        + (restHeading ? ' ' + restHeading : '');
+      return `${bullet} ${imperativeHeading}. ${body}`;
+    }
+    return `${bullet} ${heading}—${body.charAt(0).toLowerCase() + body.slice(1)}`;
+  }).join('\n');
+}
+
 // ── 11. Main Humanize Controller ─────────────────────────────────────────────
 // Always transforms the user's own text. Nothing is ever substituted.
 function humanizeLocalText(rawText, style = 'natural', opts = {}) {
   if (!rawText || !rawText.trim()) return '';
   const cleaned = cleanMarkdown(rawText);
-  const rawParagraphs = cleaned.split(/\n\s*\n+/);
+  const destructured = destructureBulletHeadings(cleaned, style);
+  const rawParagraphs = destructured.split(/\n\s*\n+/);
 
   const out = rawParagraphs.map(paragraph => {
     const p = paragraph.trim();
