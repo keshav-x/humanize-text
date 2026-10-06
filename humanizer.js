@@ -59,9 +59,8 @@ function cleanMarkdown(text) {
     .replace(/^##\s+(.*$)/gm, '$1')
     .replace(/^#\s+(.*$)/gm, '$1')
     .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/(?<!\*)\*(?!\s)(.+?)(?<!\s)\*(?!\*)/g, '$1')
     .replace(/__(.*?)__/g, '$1')
-    .replace(/_(.*?)_/g, '$1')
     .trim();
 }
 
@@ -8551,8 +8550,10 @@ function transformDefinitionOpener(sents) {
   return sents;
 }
 
-function injectRhythmicBurstiness(sents, style) {
-  if (sents.length < 2 || style === 'academic') return sents;
+function injectRhythmicBurstiness(sents, style, opts = {}) {
+  if (sents.length < 2 || style === 'academic' || opts.isListItem || opts.noHooks) return sents;
+  if (/^\s*([*•\-\d]+\.?|[a-zA-Z]\))\s+/.test(sents[0] || '')) return sents;
+
   const lengths = sents.map(wc);
   const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
   const variance = lengths.reduce((sum, l) => sum + Math.pow(l - mean, 2), 0) / lengths.length;
@@ -8672,13 +8673,16 @@ function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   if (!p) return '';
   const synProb = typeof opts.synProb === 'number' ? opts.synProb : 0.05;
 
+  const isListItem = opts.isListItem || /^\s*([*•\-\d]+\.?|[a-zA-Z]\))\s+/.test(p);
+  const currentOpts = { ...opts, isListItem };
+
   // Lists / multi-line blocks: keep line structure, process long lines individually
   if (/\n/.test(p)) {
     return p.split(/\n/).map(line => {
       const t = line.trim();
       if (!t) return '';
       if (t.length < 60 && !/[.!?]\s*\S/.test(t)) return t;
-      return restructureArbitraryParagraph(t, style, opts);
+      return restructureArbitraryParagraph(t, style, { ...currentOpts, isListItem: /^\s*([*•\-\d]+\.?|[a-zA-Z]\))\s+/.test(t) });
     }).join('\n');
   }
 
@@ -8704,10 +8708,10 @@ function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   sents = sents.flatMap(splitLongSentence);
   sents = dropRecapCloser(sents);
   sents = mergeShortNeighbours(sents);
-  sents = transformDefinitionOpener(sents);
-  sents = injectRhythmicBurstiness(sents, style);
+  if (!isListItem) sents = transformDefinitionOpener(sents);
+  sents = injectRhythmicBurstiness(sents, style, currentOpts);
   sents = enforceSawtoothRhythm(sents);
-  sents = injectAttentionDisruptions(sents, style);
+  if (!isListItem) sents = injectAttentionDisruptions(sents, style);
   sents = injectConversationalConcessions(sents, style);
   sents = ensureBurstiness(sents);
 
@@ -8736,9 +8740,9 @@ function humanizeLocalText(rawText, style = 'natural', opts = {}) {
   return out.filter(Boolean).join('\n\n');
 }
 
-// Post-processing for text that came back from an LLM (no synonym swapping).
+// Post-processing for text that came back from an LLM (no synonym swapping, no hooks).
 function polishText(rawText, style = 'natural') {
-  return humanizeLocalText(rawText, style, { synProb: 0 });
+  return humanizeLocalText(rawText, style, { synProb: 0, noHooks: true });
 }
 
 async function humanizeText(rawText, style = 'natural', options = {}) {
