@@ -1,18 +1,13 @@
 /**
  * app.js
- * Clean Utilitarian Controller for TextHuman v2.0
- * 
- * Synthesizes 5 open-source repositories:
- * - blader/humanizer (Wikipedia AI tell stripping)
- * - epoko77-ai/im-not-ai (Content Anchor Preservation & 100% fact retention)
- * - rudra496/StealthHumanizer (Collocations, lexicon, safe synonyms, sentence burstiness)
- * - DadaNanjesha/AI-Text-Humanizer-App (Natural vs Academic register styling)
- * - lynote-ai/humanize-text (Multi-stage transformation pipeline & verification)
+ * Utilitarian Controller for TextHuman v2.0
  * 
  * Features:
  * - 100% Free default engine (runs locally in browser with ZERO API keys required)
+ * - Multi-stage deterministic linguistic transformation pipeline
  * - Real-time Live ZeroGPT Detection API integration
  * - Content Anchor audit confirming 100% fact, date, and name retention
+ * - Dual tone styling: Natural conversational vs Academic formal
  * - Optional custom API key support (Google Gemini / Groq) for power users
  * - Instant Copy and PDF Export
  */

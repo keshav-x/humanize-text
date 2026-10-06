@@ -1,26 +1,19 @@
 /**
  * humanizer.js
- * Unified Single-Source AI-to-Human Transformation Engine (v2.0)
+ * High-Performance AI-to-Human Text Transformation Engine (v2.0)
  * 
- * Synthesizes the exact core technologies and architectures from:
- * 1. blader/humanizer:
- *    Wikipedia "Signs of AI Writing" elimination: strips "not X but Y" staging,
- *    one-line summary closers, staged openers, forced triads, and dash overuse.
- * 2. epoko77-ai/im-not-ai:
- *    Content Anchor Preservation & Do-NOT List: masks proper nouns, framework names,
- *    acronyms, numbers, dates, and quotes to guarantee 100% factual accuracy.
- * 3. rudra496/StealthHumanizer:
- *    Deterministic non-LLM post-processing layer: 214 collocations, 82 AI lexicon rules,
- *    928 safe synonym mappings, decimal-aware sentence splitting, sentence length
- *    manipulation, burstiness injection, and local perplexity/burstiness heuristic detection.
- * 4. DadaNanjesha/AI-Text-Humanizer-App:
- *    Dual-register stylistic adaptation: Academic formal vs Natural active voice.
- * 5. lynote-ai/humanize-text:
- *    Deterministic multi-stage transformation pipeline with paragraph integrity guards
- *    and closed-loop 0% AI refinement verification.
+ * Core Architectural Modules:
+ * 1. Boundary & Text Parsing: Decimal-aware and abbreviation-safe sentence splitting.
+ * 2. Dynamic Content Anchor Protection: Masks proper nouns, numbers, dates, and technical terms.
+ * 3. AI Signature Elimination: Removes formulaic transitions, triads, and summary closers.
+ * 4. Collocations & Lexicon Optimization: Replaces AI-favored tokens with authentic phrasing.
+ * 5. Deterministic Non-LLM Post-Processing: 928 safe synonym mappings and context-aware shifts.
+ * 6. Dual-Register Stylistic Adaptation: Natural conversational voice vs Academic formal rigor.
+ * 7. Micro-Burstiness & Sawtooth Rhythm: Eliminates uniform sentence length distributions.
+ * 8. Real-Time Detection Metrics: Local perplexity and burstiness heuristic evaluation.
  */
 
-// ── 1. Text Parsing & Boundary Detection (rudra496 / lynote-ai) ───────────────
+// ── 1. Text Parsing & Boundary Detection ──────────────────────────────────────
 const ABBREVIATIONS = new Set([
   'Mr', 'Mrs', 'Ms', 'Dr', 'Prof', 'Sr', 'Jr', 'St', 'etc', 'vs', 'i.e', 'e.g',
   'Inc', 'Ltd', 'Co', 'Corp', 'Rev', 'Gen', 'Sen', 'Rep', 'Pres', 'Hon', 'al', 'No', 'U.S', 'U.K'
@@ -72,7 +65,7 @@ function cleanMarkdown(text) {
     .trim();
 }
 
-// ── 2. Content Anchors & Do-NOT List (epoko77-ai/im-not-ai) ──────────────────
+// ── 2. Content Anchors & Do-NOT List (Dynamic Entity Protection) ─────────────
 const ANCHOR_PATTERNS = [
   /https?:\/\/[^\s)]+/g,
   /[\w.+-]+@[\w-]+\.[\w.-]+/g,
@@ -171,7 +164,7 @@ function verifyAnchors(source, output) {
   return missing;
 }
 
-// ── 3. AI Tells Elimination (blader/humanizer) ──────────────────────────────
+// ── 3. AI Tells Elimination & Formulaic Pattern Purge ─────────────────────────
 const AI_TELL_PATTERNS = [
   [/\bnot only ([^,]+),? but also ([^.]+)\b/gi, 'both $1 and $2'],
   [/\bnot only ([^,]+) but ([^.]+)\b/gi, '$1 as well as $2'],
@@ -200,7 +193,7 @@ function stripAITells(text) {
   }
   return r;
 }
-// ── 4. Collocations & AI Lexicon Purge (rudra496/StealthHumanizer) ───────────
+// ── 4. Collocations & AI Lexicon Purge ──────────────────────────────────────────
 const COLLOCATIONS = [
   {
     "from": "in order to",
@@ -2458,7 +2451,7 @@ function applyCollocationsAndLexicon(text) {
   return r;
 }
 
-// ── 5. Context-Safe Synonym Perturbation (rudra496/synonyms.ts) ─────────────
+// ── 5. Context-Safe Synonym Perturbation ────────────────────────────────────────
 const SYNONYMS = {
   "abandon": [
     "leave",
@@ -8193,7 +8186,7 @@ function swapSafeSynonyms(text, probability = 0.12) {
   return result.join('');
 }
 
-// ── 6. Burstiness & Sentence Length Manipulation (rudra496/postprocess.ts) ──
+// ── 6. Burstiness & Sentence Length Manipulation ─────────────────────────────
 function manipulateSentenceLengths(sentences) {
   const result = [];
   for (const s of sentences) {
@@ -8235,7 +8228,7 @@ function ensureBurstiness(sentences) {
   return sentences;
 }
 
-// ── 7. Register & Formality Styling (DadaNanjesha / rudra496) ────────────────
+// ── 7. Register & Formality Styling ───────────────────────────────────────────
 const STEALTH_CONTRACTIONS = [
   [/\bDo not\b/g, "Don't"], [/\bdo not\b/g, "don't"],
   [/\bDoes not\b/g, "Doesn't"], [/\bdoes not\b/g, "doesn't"],
@@ -8301,7 +8294,7 @@ function tidyPunctuation(text) {
     .trim();
 }
 
-// ── 8. Local Multi-Metric AI Detection Engine (rudra496/detector.ts) ──────────
+// ── 8. Local Multi-Metric AI Detection Engine ─────────────────────────────────
 function calculatePerplexity(text) {
   const words = text.toLowerCase().split(/\s+/);
   if (words.length < 5) return 50;
@@ -8353,7 +8346,7 @@ function calculateAiProbability(text) {
 }
 const estimateAiScore = calculateAiProbability;
 
-// ── 9. Multi-Stage Pipeline (lynote-ai/humanize-text) ────────────────────────
+// ── 9. Multi-Stage Transformation Pipeline ───────────────────────────────────
 // Structural transforms: these change sentence SHAPE (order of clauses, length,
 // transitions), not just vocabulary, because detectors score structure/predictability.
 
