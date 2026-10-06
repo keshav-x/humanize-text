@@ -102,7 +102,22 @@ function extractProtectedEntities(text) {
     return `___PROT_${idx}___`;
   });
 
-  // 2. Known proper names, frameworks, tools, and technical terms
+  // 2. Multi-word capitalized proper names, frameworks, and technical entities
+  const dynamicAnchors = collectAnchors(text)
+    .filter(a => a.length >= 3 && !/^\d+$/.test(a))
+    .sort((a, b) => b.length - a.length);
+
+  for (const item of dynamicAnchors) {
+    const escaped = item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`\\b${escaped}\\b`, 'g');
+    masked = masked.replace(re, (m) => {
+      const idx = protectedItems.length;
+      protectedItems.push(m);
+      return `___PROT_${idx}___`;
+    });
+  }
+
+  // 3. Known proper names, frameworks, tools, and technical terms
   const KNOWN_ENTITIES = [
     'Guido van Rossum', 'Gyanesh Kumar', 'Special Intensive Revision',
     'Eisenhower Matrix', 'NumPy', 'Pandas', 'Matplotlib', 'Seaborn',
@@ -118,14 +133,14 @@ function extractProtectedEntities(text) {
     });
   }
 
-  // 3. Technical acronyms (2-5 uppercase characters)
+  // 4. Technical acronyms (2-5 uppercase characters)
   masked = masked.replace(/\b([A-Z]{2,5})\b/g, (m) => {
     const idx = protectedItems.length;
     protectedItems.push(m);
     return `___PROT_${idx}___`;
   });
 
-  // 4. Exact numbers, years, percentages, and units
+  // 5. Exact numbers, years, percentages, and units
   masked = masked.replace(/\b\d+(?:[.,]\d+)*(?:st|nd|rd|th|%)?(?!\w)/g, (m) => {
     const idx = protectedItems.length;
     protectedItems.push(m);
@@ -8462,6 +8477,102 @@ function injectRhythmicBurstiness(sents, style) {
   return sents;
 }
 
+// ── 6 Advanced Anti-Detection Techniques ──────────────────────────────────────
+
+// 1. Break AI Triads ("X, Y, and Z" -> "X and Y—along with Z")
+function breakAITriads(text) {
+  return text.replace(
+    /\b([A-Za-z0-9_\s—–-]{3,28}),\s+([A-Za-z0-9_\s—–-]{3,28}),\s+and\s+([A-Za-z0-9_\s—–-]{3,28})\b/g,
+    (match, p1, p2, p3) => {
+      if (match.includes('.') || match.includes(';') || match.includes('\n') || match.includes('___PROT_')) return match;
+      return `${p1.trim()} and ${p2.trim()}—along with ${p3.trim()}`;
+    }
+  );
+}
+
+// 2. De-passivization (Active Voice Inversion)
+const PASSIVE_VOICE_MAP = [
+  [/\bis (?:utilized|utilised|employed) to\b/gi, 'helps to'],
+  [/\bis designed to\b/gi, 'aims to'],
+  [/\bis intended to\b/gi, 'aims to'],
+  [/\bis characterized by\b/gi, 'features'],
+  [/\bare characterized by\b/gi, 'feature'],
+  [/\bcan be achieved by\b/gi, 'comes from'],
+  [/\bare required to\b/gi, 'must'],
+  [/\bhas been shown to\b/gi, 'consistently'],
+  [/\bis considered to be\b/gi, 'is'],
+  [/\bcan be seen as\b/gi, 'acts as'],
+  [/\bis required in order to\b/gi, 'must']
+];
+
+function depassivizeClauses(text) {
+  let r = text;
+  for (const [re, rep] of PASSIVE_VOICE_MAP) {
+    r = r.replace(re, rep);
+  }
+  return r;
+}
+
+// 3. Sawtooth Rhythm Enforcer (Micro-Burstiness: alternates short & long sentences)
+function enforceSawtoothRhythm(sents) {
+  if (sents.length < 3) return sents;
+  const out = [];
+  for (let i = 0; i < sents.length; i++) {
+    const curr = sents[i];
+    const next = sents[i + 1];
+    if (next && Math.abs(wc(curr) - wc(next)) < 5 && wc(curr) >= 16) {
+      const m = curr.match(/,\s+(and|but|while|so|which)\s+/i);
+      if (m && m.index > 25 && m.index < curr.length - 20) {
+        const h = curr.slice(0, m.index).trim() + '.';
+        const t = curr.slice(m.index + m[0].length).trim();
+        const conj = m[1].toLowerCase();
+        const start = (conj === 'but' || conj === 'so') ? conj.charAt(0).toUpperCase() + conj.slice(1) + ' ' : '';
+        out.push(h);
+        out.push(start + (t.charAt(0).toUpperCase() + t.slice(1)));
+        continue;
+      }
+    }
+    out.push(curr);
+  }
+  return out;
+}
+
+// 4. Attention-Vector Disruption (Inject parenthetical qualifications adjacent to entities)
+function injectAttentionDisruptions(sents, style) {
+  if (style === 'academic') return sents;
+  let injected = false;
+  return sents.map((s, idx) => {
+    if (idx > 0 && idx < sents.length - 1 && !injected && !s.includes('—')) {
+      const m = s.match(/\b(___PROT_\d+___)\b/);
+      if (m) {
+        injected = true;
+        return s.replace(m[1], `${m[1]}—which, if you look closely at how it functions—`);
+      }
+    }
+    return s;
+  });
+}
+
+// 5. Conversational Concessions ("Sure, X, but Y anyway")
+function injectConversationalConcessions(sents, style) {
+  if (style === 'academic') return sents;
+  return sents.map(s => {
+    const m = s.match(/^(?:However|Nevertheless|Still),\s+(.*)$/i);
+    if (m && Math.random() < 0.7) {
+      return `Sure, ${m[1].charAt(0).toLowerCase() + m[1].slice(1)}`;
+    }
+    return s;
+  });
+}
+
+// 6. Punctuation Diversity (Colons for setups, semicolons for close thoughts)
+function diversifyPunctuation(text) {
+  return text
+    .replace(/\bThe reason for this is that\b/gi, 'The reason is simple:')
+    .replace(/\bThis means that\b/gi, 'In other words,')
+    .replace(/\bIt is worth noting that\b/gi, 'Keep in mind:');
+}
+
 function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   let p = paragraph.trim();
   if (!p) return '';
@@ -8480,8 +8591,11 @@ function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   // Pass 1: lock protected entities
   const { masked, protectedItems } = extractProtectedEntities(p);
 
-  // Pass 2-3: AI tell patterns, collocations and lexicon purge
+  // Pass 2-3: AI tell patterns, collocations, de-passivization, triad breaking & lexicon purge
   let processed = stripAITells(masked);
+  processed = depassivizeClauses(processed);
+  processed = breakAITriads(processed);
+  processed = diversifyPunctuation(processed);
   processed = applyCollocationsAndLexicon(processed);
 
   // Pass 4: light synonym perturbation (kept low: heavy swapping reads as spun text)
@@ -8490,7 +8604,7 @@ function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   // Pass 5: sentences
   let sents = splitIntoSentences(processed);
 
-  // Pass 6: structural rewrites
+  // Pass 6: structural rewrites & micro-burstiness
   sents = sents.map(s => softenTransitions(s, style));
   sents = sents.map(s => (Math.random() < 0.7 ? swapSubordinateClause(s) : s));
   sents = sents.flatMap(splitLongSentence);
@@ -8498,6 +8612,9 @@ function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   sents = mergeShortNeighbours(sents);
   sents = transformDefinitionOpener(sents);
   sents = injectRhythmicBurstiness(sents, style);
+  sents = enforceSawtoothRhythm(sents);
+  sents = injectAttentionDisruptions(sents, style);
+  sents = injectConversationalConcessions(sents, style);
   sents = ensureBurstiness(sents);
 
   // Pass 7-8: register, punctuation
