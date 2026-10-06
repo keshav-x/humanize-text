@@ -665,3 +665,10 @@ textarea.editor-textarea::placeholder {
     height: 42px;
   }
 }
+
+/* Prompt Kit dialog */
+.kit-step { font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin: 6px 0 2px; }
+.kit-box { width: 100%; min-height: 170px; resize: vertical; font-family: var(--font-mono); font-size: 0.74rem; line-height: 1.5; box-sizing: border-box; }
+.kit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 12px; }
+.kit-spacer { flex: 1; }
+.stat-pill strong.warn { color: #e8a33d; }

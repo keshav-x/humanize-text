@@ -30,8 +30,9 @@
       <div class="control-group">
         <span class="control-label">Engine:</span>
         <div class="segmented-tabs" id="engine-tabs">
-          <button class="tab-btn active" data-engine="local" id="tab-local" title="Single-Source Engine: 100% Free, runs in your browser with zero API key required">Local (Free · No Key)</button>
-          <button class="tab-btn" data-engine="ai" id="tab-ai" title="Optional: Use your own Google Gemini or Groq API key">Custom API Key</button>
+          <button class="tab-btn active" data-engine="prompt" id="tab-prompt" title="Best results: get a ready-made prompt, run it in ChatGPT / Claude / Gemini, paste the reply back. No API key.">Prompt Kit (Best · No Key)</button>
+          <button class="tab-btn" data-engine="local" id="tab-local" title="Instant, private, offline rule-based rewrite of your own text. No AI model, no key.">Local (Instant)</button>
+          <button class="tab-btn" data-engine="ai" id="tab-ai" title="Optional: Use your own Google Gemini or Groq API key">Own API Key</button>
         </div>
       </div>
 
@@ -138,10 +139,9 @@
 
         <div class="pane-footer">
           <div class="stats-row" id="score-row" style="display:none;">
-            <span class="stat-pill"><span class="stat-name">Engine:</span> <strong id="stat-engine">Local (Free)</strong></span>
-            <span class="stat-pill" title="Live statistical detection score from ZeroGPT API"><span class="stat-name">ZeroGPT Live:</span> <strong id="stat-zerogpt" class="good">0.0% AI</strong></span>
-            <span class="stat-pill" title="Multi-detector compliance against Grammarly, Turnitin, GPTZero & CopyLeaks"><span class="stat-name">Grammarly & Neural:</span> <strong id="stat-neural" class="good">Clean · 0%</strong></span>
-            <span class="stat-pill"><span class="stat-name">Facts Retained:</span> <strong id="stat-facts" class="good">100%</strong></span>
+            <span class="stat-pill"><span class="stat-name">Engine:</span> <strong id="stat-engine">-</strong></span>
+            <span class="stat-pill" title="Live score from the ZeroGPT API. Shows 'Unverified' if the detector can't be reached."><span class="stat-name">ZeroGPT Live:</span> <strong id="stat-zerogpt">-</strong></span>
+            <span class="stat-pill"><span class="stat-name">Facts Retained:</span> <strong id="stat-facts">-</strong></span>
           </div>
           <span class="footer-meta" id="output-empty-hint">Ready for conversion · 100% Free · No API key required</span>
         </div>
@@ -150,6 +150,36 @@
     </div>
 
   </main>
+
+  <!-- Prompt Kit Modal -->
+  <div class="modal-backdrop" id="modal-prompt">
+    <div class="modal-dialog" style="max-width: 760px; width: 94vw;">
+      <div class="dialog-header">
+        <h2 class="dialog-title">Prompt Kit: humanize with your own AI chat</h2>
+        <button class="dialog-close" id="btn-close-prompt">✕</button>
+      </div>
+      <div class="dialog-body">
+        <p class="kit-step"><strong>Step 1.</strong> Copy this prompt (your text is already inside) and send it to ChatGPT, Claude, Gemini or any AI chat.</p>
+        <textarea id="prompt-box" class="field-input kit-box" readonly spellcheck="false"></textarea>
+        <div class="kit-row">
+          <button class="btn-primary" id="btn-copy-prompt">Copy prompt</button>
+          <button class="btn-secondary" id="btn-reroll-prompt" title="Builds a different prompt variant (persona, rhythm, quirks)">Re-roll variant</button>
+          <span class="kit-spacer"></span>
+          <button class="btn-secondary" data-open-ai="chatgpt">Open ChatGPT</button>
+          <button class="btn-secondary" data-open-ai="claude">Open Claude</button>
+          <button class="btn-secondary" data-open-ai="gemini">Open Gemini</button>
+        </div>
+
+        <p class="kit-step"><strong>Step 2.</strong> Paste the AI's reply here. We'll add a local restructuring pass and check it.</p>
+        <textarea id="reply-box" class="field-input kit-box" spellcheck="false" placeholder="Paste the AI's rewritten text here..."></textarea>
+        <div class="kit-row">
+          <button class="btn-primary" id="btn-finish-reply">Finish &amp; check</button>
+          <button class="btn-secondary" id="btn-copy-refine" title="Send this in the same chat afterwards, then paste the improved reply above">Copy 2nd-pass prompt</button>
+        </div>
+        <span class="field-hint">Tip: if a detector still flags it, send the 2nd-pass prompt in the same chat, or re-roll the variant and run it in a fresh chat. No tool can guarantee 0% on every detector, so always test the final text.</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Settings Modal (Optional Custom API Keys) -->
   <div class="modal-backdrop" id="modal-settings">

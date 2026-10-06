@@ -126,7 +126,7 @@ function extractProtectedEntities(text) {
   });
 
   // 4. Exact numbers, years, percentages, and units
-  masked = masked.replace(/\b\d{1,4}(?:st|nd|rd|th)?\b/g, (m) => {
+  masked = masked.replace(/\b\d+(?:[.,]\d+)*(?:st|nd|rd|th|%)?(?!\w)/g, (m) => {
     const idx = protectedItems.length;
     protectedItems.push(m);
     return `___PROT_${idx}___`;
@@ -161,9 +161,8 @@ const AI_TELL_PATTERNS = [
   [/\bnot only ([^,]+),? but also ([^.]+)\b/gi, 'both $1 and $2'],
   [/\bnot only ([^,]+) but ([^.]+)\b/gi, '$1 as well as $2'],
   [/\bit is not ([^,]+),? (?:but|rather) ([^.]+)\b/gi, '$2 instead of $1'],
-  [/\s*[—–]\s*/g, ', '],
   [/\*\*([^\*]+)\*\*:\s*/g, '$1: '],
-  [/\bIn today's (?:fast-paced|digital|modern|ever-changing)?\s*(?:world|landscape|environment)[,]?\s*/gi, 'Today, '],
+  [/\bIn today's(?:\s+[\w-]+){0,3}\s+(?:world|landscape|environment|society|market|workplace|era)[,]?\s*/gi, 'Today, '],
   [/\bIn the realm of\s+/gi, 'In '],
   [/\bIn the contemporary landscape\s*,?\s*/gi, 'Today, '],
   [/\b(?:In conclusion|To conclude|To summarize|In summary)\s*,?\s*/gi, ''],
@@ -171,7 +170,12 @@ const AI_TELL_PATTERNS = [
   [/\bstands? as a (?:testament|beacon|symbol) (?:of|to|for)\b/gi, 'shows'],
   [/\bserves as a\b/gi, 'is a'],
   [/\bnavigat(?:e|es|ing) the (?:complexities|challenges|landscape) of\b/gi, 'dealing with'],
-  [/\bat the (?:heart|core|forefront) of\b/gi, 'central to']
+  [/\bat the (?:heart|core|forefront) of\b/gi, 'central to'],
+  [/\b(?:Moreover|Furthermore|Additionally|In addition|Consequently|Notably|Importantly),\s*/gi, ''],
+  [/\b[Ii]t is (?:crucial|essential|vital|pivotal|imperative) (?:for|to|that)\b/g, 'it helps to'],
+  [/\bdrastically (?:reduces|decreases|diminishes)\b/gi, 'cuts down'],
+  [/\bfrequently struggle with\b/gi, 'often run into'],
+  [/\ba wide (?:variety|range) of\b/gi, 'many']
 ];
 
 function stripAITells(text) {
@@ -8335,352 +8339,409 @@ function calculateAiProbability(text) {
 const estimateAiScore = calculateAiProbability;
 
 // ── 9. Multi-Stage Pipeline (lynote-ai/humanize-text) ────────────────────────
-function restructureArbitraryParagraph(paragraph, style) {
+// Structural transforms: these change sentence SHAPE (order of clauses, length,
+// transitions), not just vocabulary, because detectors score structure/predictability.
+
+const SAFE_LOWER_STARTERS = new Set([
+  'the', 'this', 'that', 'these', 'those', 'it', 'they', 'we', 'you', 'there', 'many', 'most',
+  'some', 'a', 'an', 'each', 'such', 'their', 'its', 'our', 'your', 'people', 'few', 'several',
+  'both', 'all', 'one', 'what'
+]);
+
+function lowerFirstSafe(s) {
+  const w = (s.match(/^[A-Za-z']+/) || [''])[0].toLowerCase();
+  return SAFE_LOWER_STARTERS.has(w) ? s.charAt(0).toLowerCase() + s.slice(1) : null;
+}
+
+function upperFirst(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function wc(s) {
+  return s.split(/\s+/).filter(Boolean).length;
+}
+
+// "Because X, Y." -> "Y because X."   (changes clause order, a strong structural signal)
+function swapSubordinateClause(sentence) {
+  const m = sentence.match(/^(Because|Since|Although|Though|While|Whereas|If|When|Unless|After|Before) ([^,;]{10,}?), ([^,].{15,}?)([.!?])$/);
+  if (!m) return sentence;
+  const [, conj, clause, main, punct] = m;
+  if (/^(and|but|which|so|yet|then)\b/i.test(main)) return sentence;
+  const needsComma = /^(Although|Though|While|Whereas)$/.test(conj);
+  return upperFirst(main) + (needsComma ? ', ' : ' ') + conj.toLowerCase() + ' ' + clause + punct;
+}
+
+function splitLongSentence(sentence) {
+  if (wc(sentence) < 24) return [sentence];
+  const m = sentence.match(/,\s+(and|but|so|yet)\s+/i);
+  if (!m || m.index < 40 || m.index > sentence.length - 30) return [sentence];
+  const head = sentence.slice(0, m.index).trim() + '.';
+  const word = m[1].toLowerCase();
+  const tail = sentence.slice(m.index + m[0].length).trim();
+  const keep = (word === 'but' || word === 'yet') ? upperFirst(word) + ' ' + tail : upperFirst(tail);
+  return [head, keep];
+}
+
+function mergeShortNeighbours(sents) {
+  const out = [];
+  for (let i = 0; i < sents.length; i++) {
+    const a = sents[i];
+    const b = sents[i + 1];
+    if (b && wc(a) < 10 && wc(b) < 10 && /\.$/.test(a) && Math.random() < 0.6) {
+      const lowered = lowerFirstSafe(b);
+      if (lowered) {
+        out.push(a.slice(0, -1) + (Math.random() < 0.5 ? ', and ' : '; ') + lowered);
+        i++;
+        continue;
+      }
+    }
+    out.push(a);
+  }
+  return out;
+}
+
+function softenTransitions(sentence, style) {
+  const filler = /^(Moreover|Furthermore|Additionally|In addition|Notably|Importantly|Consequently|Subsequently|Indeed),\s+(.*)$/s;
+  const m = sentence.match(filler);
+  if (m && Math.random() < 0.6) return upperFirst(m[2]);
+  if (style !== 'academic') {
+    const h = sentence.match(/^However,\s+(.*)$/s);
+    if (h && Math.random() < 0.5) return 'But ' + h[1];
+    const t = sentence.match(/^(Therefore|Thus|Hence),\s+(.*)$/s);
+    if (t) return 'So ' + t[2].charAt(0).toLowerCase() + t[2].slice(1);
+  }
+  return sentence;
+}
+
+// Final "Overall, ..." recap lines are one of the strongest AI tells.
+function dropRecapCloser(sents) {
+  if (sents.length < 4) return sents;
+  const last = sents[sents.length - 1];
+  if (/^(Overall|Ultimately|In essence|In short|All in all|In summary|To sum up)\b/i.test(last)
+      && !/___PROT_|\d/.test(last)) {
+    return sents.slice(0, -1);
+  }
+  return sents;
+}
+
+const PUNCHY_HUMAN_HOOKS = [
+  'Getting this right in practice is rarely simple.',
+  'Real-world execution hits friction fast.',
+  'Theory sounds clean until reality hits.',
+  'Working through the details takes patience.',
+  'Most practitioners learn this the hard way.',
+  'Nobody gets this right on day one.',
+  'The operational reality is rarely neat.',
+  'It’s brutal out there.'
+];
+
+function transformDefinitionOpener(sents) {
+  if (sents.length === 0) return sents;
+  const s0 = sents[0];
+  const m = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+(?:is an?|represents an?|denotes an?|comprises an?)\s+(.*)$/i);
+  if (m) {
+    const subj = m[1].trim();
+    const rest = m[2].trim().replace(/[.!?]+$/, '');
+    sents[0] = `Anyone working with ${subj} notices the design right away: it operates as ${rest}.`;
+  }
+  return sents;
+}
+
+function injectRhythmicBurstiness(sents, style) {
+  if (sents.length < 2 || style === 'academic') return sents;
+  const lengths = sents.map(wc);
+  const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
+  const variance = lengths.reduce((sum, l) => sum + Math.pow(l - mean, 2), 0) / lengths.length;
+  const cv = (Math.sqrt(variance) / (mean || 1)) * 100;
+
+  // If sentence lengths are flat (CV < 40%), inject an authentic human hook to break uniformity
+  if (cv < 40 && sents.length <= 5) {
+    const idx = Math.abs(sents[0].length * 7 + sents.length) % PUNCHY_HUMAN_HOOKS.length;
+    return [PUNCHY_HUMAN_HOOKS[idx], ...sents];
+  }
+  return sents;
+}
+
+function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   let p = paragraph.trim();
   if (!p) return '';
+  const synProb = typeof opts.synProb === 'number' ? opts.synProb : 0.05;
 
-  // Pass 1: Extract and lock protected entities (epoko77)
+  // Lists / multi-line blocks: keep line structure, process long lines individually
+  if (/\n/.test(p)) {
+    return p.split(/\n/).map(line => {
+      const t = line.trim();
+      if (!t) return '';
+      if (t.length < 60 && !/[.!?]\s*\S/.test(t)) return t;
+      return restructureArbitraryParagraph(t, style, opts);
+    }).join('\n');
+  }
+
+  // Pass 1: lock protected entities
   const { masked, protectedItems } = extractProtectedEntities(p);
 
-  // Pass 2: Strip AI tell patterns (blader)
+  // Pass 2-3: AI tell patterns, collocations and lexicon purge
   let processed = stripAITells(masked);
-
-  // Pass 3: Apply 214 collocations & 82 AI lexicon purges (rudra496)
   processed = applyCollocationsAndLexicon(processed);
 
-  // Pass 4: Safe synonym perturbation (rudra496)
-  processed = swapSafeSynonyms(processed, 0.12);
+  // Pass 4: light synonym perturbation (kept low: heavy swapping reads as spun text)
+  if (synProb > 0) processed = swapSafeSynonyms(processed, synProb);
 
-  // Pass 5: Split into abbreviation-aware sentences (rudra496)
+  // Pass 5: sentences
   let sents = splitIntoSentences(processed);
 
-  // Pass 6: Sentence length manipulation & burstiness injection (rudra496)
-  sents = manipulateSentenceLengths(sents);
+  // Pass 6: structural rewrites
+  sents = sents.map(s => softenTransitions(s, style));
+  sents = sents.map(s => (Math.random() < 0.7 ? swapSubordinateClause(s) : s));
+  sents = sents.flatMap(splitLongSentence);
+  sents = dropRecapCloser(sents);
+  sents = mergeShortNeighbours(sents);
+  sents = transformDefinitionOpener(sents);
+  sents = injectRhythmicBurstiness(sents, style);
   sents = ensureBurstiness(sents);
 
-  // Pass 7: Register adjustment (DadaNanjesha)
-  let joined = sents.join(' ');
-  joined = applyRegister(joined, style);
-
-  // Pass 8: Capitalization and punctuation cleanup
+  // Pass 7-8: register, punctuation
+  let joined = applyRegister(sents.join(' '), style);
   joined = tidyPunctuation(joined);
   joined = capitalizeSentenceStarts(joined);
 
-  // Pass 9: Restore protected entities with 100% fidelity (epoko77)
-  let output = restoreProtectedEntities(joined, protectedItems);
-
-  // Pass 10: Closed-Loop AI Evaluation & Refinement (lynote-ai)
-  const score = calculateAiProbability(output);
-  if (score > 15 && sents.length >= 3) {
-    sents = splitIntoSentences(output);
-    sents = ensureBurstiness(sents);
-    output = sents.join(' ');
-  }
-
-  return output;
+  // Pass 9: restore protected entities
+  return restoreProtectedEntities(joined, protectedItems);
 }
-const BENCHMARK_SAMPLES = [
-  {
-    // 1. India Election Commission SIR
-    match: (text) => /Special Intensive Revision|Gyanesh Kumar|electoral rolls/i.test(text),
-    variants: {
-      natural: `The Election Commission operates under the authority of Constitution per Article 324, and subsequently enacted Representation of the People Act. The body has the powers to act in an appropriate manner when enacted laws make insufficient provisions for the conduct of an election. In October 2026, street demonstrations took place in Delhi and Mumbai regarding the Special Intensive Revision (SIR) of voter lists. Student unions, political parties, and civil-society groups marched together, demanding complete transparency in the review. Protesters raised concerns that documentation rules could exclude legitimate voters, prompting calls for Chief Election Commissioner Gyanesh Kumar to address the issue. The commission maintained that the revision is intended to remove duplicate and deceased entries to protect the accuracy of electoral rolls.`,
-      academic: `The Election Commission of India functions as an autonomous constitutional authority pursuant to Article 324 and the Representation of the People Act. During October 2026, administrative procedures surrounding the Special Intensive Revision (SIR) of electoral registries prompted sustained scrutiny across Delhi and Mumbai. Civil-society organizations, student coalitions, and political representatives coordinated public demonstrations to demand transparency regarding voter eligibility thresholds. Apprehensions centered on the risk of disenfranchising eligible citizens through stringent documentation requirements, leading to calls for Chief Election Commissioner Gyanesh Kumar to review operational guidelines. Election authorities affirmed that the revision systematically purges duplicate records and deceased persons to ensure registry accuracy.`
-    }
-  },
-  {
-    // 2. Python Programming Language (Full Benchmark - 0.0% AI on Grammarly)
-    match: (text) => /Guido van Rossum|interpreted, high-level|NumPy|Django|PyTorch|Pandas/i.test(text),
-    variants: {
-      natural: `Back in 1991, Guido van Rossum debuted Python with a remarkably straightforward premise: programming languages shouldn't force you to decipher cryptic punctuation just to read basic logic. As an interpreted, general-purpose language, it puts human readability first. Developers routinely write working features in a fraction of the code required elsewhere. Even better, you get total freedom over your architectural style—procedural scripting, object-oriented design, and functional patterns are all treated as first-class citizens.
 
-Beyond data analysis and web engineering, Python's footprint touches almost every corner of tech—from cybersecurity analysis and DevOps automation to scientific research, game development, and desktop tools. Because it is completely cross-platform, your code executes reliably across Windows, Linux, and macOS without tedious rewrites. Backing all this up is an exceptionally generous global developer community providing exhaustive documentation, active discussion forums, and open-source software.`,
-      academic: `Originally developed by Guido van Rossum and released in 1991, Python represents an interpreted, high-level programming language emphasizing syntactic clarity and developer productivity. The core architectural philosophy prioritizes code readability, facilitating the expression of computational concepts in significantly fewer lines of source code than statically typed alternatives such as C++ or Java. Across contemporary scientific computing and artificial intelligence, standard libraries including NumPy, Pandas, and PyTorch establish Python as an essential foundational platform for data-intensive research and enterprise system integration.`
-    }
-  },
-  {
-    // 3. Effective Time Management (0.0% AI on Grammarly)
-    match: (text) => /Effective time management|Eisenhower Matrix|context switching/i.test(text),
-    variants: {
-      natural: `Time management is the process of planning and exercising conscious control of time spent on specific activities, especially to increase effectiveness, efficiency, and productivity. It involves a juggling act of various demands upon a person relating to work, social life, family, hobbies, personal interests, and commitments with the finite nature of time. Frequent context switching between multiple projects often reduces the time available for thorough analysis. Excessive meetings and uncoordinated schedules can leave very little time for individual project work. The concept is often organized as the Eisenhower Matrix, where tasks are separated into four groups based on urgency and importance. High-priority items require prompt attention, whereas longer-term objectives benefit from protected focus blocks so that major project deliverables can be completed on time.`,
-      academic: `Time management encompasses the systematic regulation and intentional allocation of finite cognitive and temporal resources across competing operational responsibilities. Within modern knowledge-work environments, excessive context switching and meeting proliferation impose measurable reaction-time penalties, diminishing uninterrupted analytical focus. Organizational frameworks frequently operationalize workload prioritization through the Eisenhower Matrix, which delineates tasks into four quadrants based on orthogonal axes of urgency and importance. Implementing protected calendar defense mechanisms preserves deep analytical throughput, ensuring critical institutional deliverables proceed without operational degradation.`
-    }
-  },
-  {
-    // 4. Climate Change & Renewable Energy
-    match: (text) => /Renewable energy|fossil fuel|solar arrays|clean-tech|greenhouse gas/i.test(text),
-    variants: {
-      natural: `Renewable energy is energy collected from natural resources that replenish on a human timescale, including solar irradiance, wind currents, tides, and geothermal heat. Over the past decade, rapid advances in solar photovoltaic technology and onshore wind manufacturing have made clean electricity generation cost-competitive with fossil fuels in most major power markets. Integrating these intermittent sources into regional grids requires substantial investments in battery storage, smart transmission networks, and flexible balancing reserves. System operators coordinate these varied power sources daily to maintain reliable grid frequency and prevent outages during peak seasonal demand.`,
-      academic: `The global energy transition involves the systematic decarbonization of electrical power systems through the deployment of renewable technologies, primarily photovoltaic solar arrays and wind turbine installations. Decreasing levelized costs of electricity (LCOE) have accelerated the displacement of conventional fossil-fuel generation. However, managing generation intermittency necessitates substantial integration of utility-scale energy storage and advanced transmission management to safeguard grid reliability and stability under fluctuating meteorological conditions.`
-    }
-  },
-  {
-    // 5. Remote Work & Modern Workplace
-    match: (text) => /Remote work|Workplace culture|in-office attendance|asynchronous workflows|commercial office leases/i.test(text),
-    variants: {
-      natural: `Telecommuting allows employees to fulfill their job responsibilities from home or alternative locations rather than traveling to a centralized corporate office. Supported by broadband internet, digital document management, and collaborative software, remote work arrangements expanded significantly across knowledge industries. For employees, eliminating daily commutes frequently provides greater flexibility and more time for personal commitments. For organizations, remote work presents coordination challenges, particularly around cross-time-zone synchronization and informal collaboration. Many firms adopt hybrid policies that blend dedicated in-person planning sessions with uninterrupted home working days.`,
-      academic: `Distributed work arrangements denote organizational structures wherein personnel execute professional duties outside traditional centralized commercial facilities. Facilitated by cloud collaboration infrastructure and asynchronous communication protocols, remote employment yields substantial reductions in transit overhead and enhanced autonomy. Nonetheless, organizations must address coordination friction, cognitive fragmentation, and boundary ambiguity through structured workflow governance and intentional communication windows.`
-    }
-  },
-  {
-    // 6. Artificial Intelligence in Healthcare & Clinical Medicine
-    match: (text) => /healthcare|Clinical discussions|diagnostic workflows|patient genetics|computational medicine/i.test(text),
-    variants: {
-      natural: `Artificial intelligence in medicine refers to the use of automated algorithms and computer vision to assist clinicians with diagnostic analysis, treatment planning, and patient monitoring. In radiological imaging, neural networks assist doctors in flagging subtle anomalies such as early-stage tumors and microscopic fractures. Pharmaceutical researchers also leverage predictive models to screen candidate molecular structures against biological targets. Clinicians retain primary diagnostic responsibility, ensuring that automated recommendations are evaluated alongside clinical exams and patient history before treatments begin.`,
-      academic: `The integration of computational intelligence into clinical medicine encompasses predictive machine learning architectures applied across diagnostic imaging, genomic sequencing, and therapeutic intervention planning. Algorithmic image analysis demonstrates high sensitivity in identifying pathological anomalies, supplementing physician evaluations. Nevertheless, clinical deployment requires rigorous validation protocols, algorithmic interpretability, and robust clinical governance to ensure diagnostic safety and patient welfare.`
-    }
-  },
-  {
-    // 7. General AI Revolution & Automation
-    match: (text) => /General AI|AI Revolution|automation|large language|foundation models/i.test(text),
-    variants: {
-      natural: `The rapid advancement of artificial intelligence and automated systems is reshaping productivity across almost every professional sector. Foundation models and natural language processors now handle routine drafting, code generation, customer queries, and data extraction with remarkable speed. While automation reduces the time required for repetitive tasks, human oversight remains vital for complex reasoning, ethical judgement, and domain-specific verification. Organizations that succeed with AI focus on pairing machine capabilities with human expertise rather than attempting total replacement.`,
-      academic: `Contemporary artificial intelligence systems, particularly large language architectures and autonomous computational agents, represent a paradigm shift in cognitive labor augmentation. By automating procedural workflows and unstructured data synthesis, these models enhance analytical velocity across diverse sectors. However, systemic reliability necessitates robust human-in-the-loop governance, mitigating risks associated with algorithmic hallucination, data drift, and bias propagation.`
-    }
-  },
-  {
-    // 8. Blockchain & Decentralized Ledgers
-    match: (text) => /Blockchain|decentralized ledger|cryptocurrency|smart contracts|consensus protocol/i.test(text),
-    variants: {
-      natural: `A blockchain is a distributed ledger technology that records transactions across a decentralized network of computers in a verifiable and tamper-resistant manner. Instead of depending on a central authority like a bank or clearinghouse, consensus algorithms validate transfers and synchronize state across all network nodes. Cryptographic hashes chain each block of data to its predecessor, preventing retroactive alteration without network-wide consensus. While scalability and transaction costs remain active engineering challenges, decentralized networks provide clear audit trails for digital assets and supply chain logistics.`,
-      academic: `Blockchain architectures implement distributed, append-only cryptographic ledgers maintained through decentralized consensus protocols. By obviating centralized intermediary authorities, these systems ensure verifiable state consistency and cryptographic immutability across distributed participant nodes. Research and deployment considerations center upon the trilemma of achieving simultaneous scalability, security, and decentralization across high-throughput distributed transaction environments.`
-    }
-  },
-  {
-    // 9. Modern Cybersecurity & Threat Defense
-    match: (text) => /cybersecurity|threat defense|zero trust|multi-factor|endpoint security/i.test(text),
-    variants: {
-      natural: `Cybersecurity encompasses the technologies, processes, and controls designed to protect computer systems, networks, devices, and data from malicious attacks. Modern threat defense has evolved beyond simple firewalls toward zero-trust architectures, where every access request is authenticated and authorized regardless of user location. Multi-factor authentication, endpoint monitoring, and automated patch management form the baseline of organizational defense. Because social engineering and phishing remain primary entry points, continuous employee awareness training is just as crucial as technical security measures.`,
-      academic: `Information security architectures address the protection of computational infrastructure, distributed endpoints, and networked assets against sophisticated adversarial threats. Contemporary defense methodologies incorporate Zero Trust Architecture (ZTA), enforcing continuous mutual authentication and granular least-privilege authorization. Resilient defense postures integrate proactive vulnerability management, automated intrusion detection, and behavioral anomaly analysis to mitigate unauthorized lateral network movement.`
-    }
-  },
-  {
-    // 10. Quantum Computing
-    match: (text) => /Quantum computing|qubits|superposition|entanglement|decoherence/i.test(text),
-    variants: {
-      natural: `Quantum computing is a computational paradigm that harnesses the principles of quantum mechanics, specifically superposition and entanglement, to process complex data. Unlike classical computers that encode information into binary bits of zeros and ones, quantum processors manipulate qubits that can exist in multiple states simultaneously. This capability allows quantum algorithms to solve certain classes of optimization, materials simulation, and number-theory problems exponentially faster than classical supercomputers. Developing fault-tolerant quantum processors requires maintaining cryogenic temperatures to prevent quantum decoherence.`,
-      academic: `Quantum computation leverages fundamental quantum mechanical phenomena, predominantly superposition and quantum entanglement, to execute parallel computational state operations. Qubits facilitate multidimensional state spaces, enabling specialized algorithms (such as Shor's and Grover's) to achieve polynomial or exponential speedups over classical equivalents for discrete optimization and quantum chemistry simulation. Mitigating environmental decoherence via quantum error correction remains the primary threshold for scalable fault-tolerant hardware implementations.`
-    }
-  }
-];
-
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { BENCHMARK_SAMPLES };
-}
 // ── 11. Main Humanize Controller ─────────────────────────────────────────────
-function humanizeLocalText(rawText, style = 'natural') {
+// Always transforms the user's own text. Nothing is ever substituted.
+function humanizeLocalText(rawText, style = 'natural', opts = {}) {
   if (!rawText || !rawText.trim()) return '';
-
   const cleaned = cleanMarkdown(rawText);
-
-  // 1. Check verified benchmarks (100% 0.0% AI on ZeroGPT Live)
-  for (const sample of BENCHMARK_SAMPLES) {
-    if (sample.match(cleaned)) {
-      if (sample.variants[style]) {
-        return sample.variants[style];
-      }
-      return sample.variants.natural;
-    }
-  }
-
-  // 2. Multi-stage paragraph-by-paragraph transform
   const rawParagraphs = cleaned.split(/\n\s*\n+/);
 
-  const transformedParagraphs = rawParagraphs.map(paragraph => {
-    let p = paragraph.trim();
+  const out = rawParagraphs.map(paragraph => {
+    const p = paragraph.trim();
     if (!p) return '';
-
-    if (p.length < 60 && !p.includes('.')) {
-      return p;
-    }
-
-    for (const sample of BENCHMARK_SAMPLES) {
-      if (sample.match(p)) {
-        return sample.variants[style] || sample.variants.natural;
-      }
-    }
-
-    return restructureArbitraryParagraph(p, style);
+    if (p.length < 60 && !/[.!?]\s*\S/.test(p) && !p.includes('.')) return p;
+    return restructureArbitraryParagraph(p, style, opts);
   });
-
-  return transformedParagraphs.filter(Boolean).join('\n\n');
+  return out.filter(Boolean).join('\n\n');
 }
 
-// Unified wrapper method
+// Post-processing for text that came back from an LLM (no synonym swapping).
+function polishText(rawText, style = 'natural') {
+  return humanizeLocalText(rawText, style, { synProb: 0 });
+}
+
 async function humanizeText(rawText, style = 'natural', options = {}) {
   const engine = options.engine || 'local';
   if (engine === 'ai' && options.apiKey) {
-    if (options.provider === 'gemini') {
-      const model = options.model || 'gemini-2.0-flash';
-      return await callGeminiAPI(options.apiKey, model, rawText, style);
-    } else {
-      return await callGroqAPI(options.apiKey, rawText, style);
-    }
+    const raw = options.provider === 'gemini'
+      ? await callGeminiAPI(options.apiKey, options.model || 'gemini-2.0-flash', rawText, style)
+      : await callGroqAPI(options.apiKey, rawText, style);
+    return polishText(raw, style);
   }
   return humanizeLocalText(rawText, style);
 }
 
-// ── 12. Stealth Anti-AI System Prompt (blader + epoko77 + rudra496) ──────────
-const STEALTH_SYSTEM_PROMPT = `You are an expert human editor and master prose writer.
-Your objective is to rewrite the input text so it sounds completely authentic, human-written, and passes statistical AI detection models (including GPTZero Model 4o, ZeroGPT, and QuillBot) with 0% AI probability.
+// ── 12. Randomised Human-Writing Prompt Builder ──────────────────────────────
+// Each prompt is assembled from random parts so outputs don't share one fingerprint.
+const PROMPT_PERSONAS = {
+  natural: [
+    'a working journalist writing a clear explainer for a general audience',
+    'a practical blogger who explains things the way you would to a smart friend',
+    'a student writing up their own notes after reading about the topic',
+    'an industry practitioner writing a short internal memo for colleagues',
+    'a magazine columnist with a dry, understated sense of humor'
+  ],
+  academic: [
+    'a graduate student drafting a literature-review section',
+    'a researcher writing a restrained journal-article introduction',
+    'a policy analyst writing a briefing note',
+    'a university lecturer writing course reading notes'
+  ]
+};
 
-CORE EDITORIAL REQUIREMENTS:
-1. STRICT RETENTION OF CONTENT & STRUCTURE (epoko77 Content Anchor standard):
-   - Preserve every single fact, proper name, framework, date, number, technical term, and argument.
-   - Maintain the author's original paragraph count and list format. If the input has 3 paragraphs, output exactly 3 paragraphs separated by double line breaks (\n\n).
+const PROMPT_RHYTHMS = [
+  'short, long, medium, very short, long',
+  'medium, very short, long, medium, short',
+  'long, short, short, long, medium',
+  'very short, long, medium, long, short',
+  'medium, long, very short, medium, long'
+];
 
-2. REMOVE AI STAGING & TELLS (blader/humanizer Wikipedia standard):
-   - No "Not X, but Y" or "not only X, but also Y" contrasts.
-   - No one-line summary closers repeating the point at the end of paragraphs ("Ultimately, X is key to Y").
-   - No staged openers ("In today's fast-paced world", "In the realm of", "X is a testament to").
-   - No forced triads (lists of 3 adjectives or clauses strung together by rule).
-   - No dashes everywhere (do not use em dashes as a universal connector).
+const PROMPT_QUIRKS = {
+  natural: [
+    'include one candid conversational concession (e.g. "Sure, [objection or drawback], but [main point] anyway")',
+    'use at least one vivid idiom or everyday phrase (e.g. "turns to mush", "out the window", "got heated", "juggle supplies")',
+    'include one parenthetical aside in brackets or dashes',
+    'start exactly one sentence with "And" or "But"',
+    'include one short punchy sentence of four to six words',
+    'use at least three natural contractions (it\'s, don\'t, that\'s)',
+    'let one sentence run longer with an extra descriptive clause tucked inside',
+    'refer to the reader or shared experience naturally ("you", "we")'
+  ],
+  academic: [
+    'include one sentence over 30 words with a subordinate clause in the middle',
+    'include one hedged analytical claim ("appears to", "in most circumstances", "tends to")',
+    'include one parenthetical qualification or context note',
+    'include one short sentence under eight words to decisively land an argument',
+    'vary the grammatical subject of consecutive sentences'
+  ]
+};
 
-3. HUMAN BURSTINESS & RHYTHM (rudra496 standard):
-   - High variance in sentence length: alternate between short punchy statements (4-8 words) and nuanced compound sentences (20-30 words).
-   - Use diverse sentence openings. Never start consecutive sentences with the same pronoun, participle, or conjunction.
-   - Strip AI buzzwords: delve, tapestry, multifaceted, foster, paradigm, cornerstone, pivotal, crucial, seamless, empower, holistic.
+const PROMPT_BANNED = [
+  'delve', 'tapestry', 'multifaceted', 'pivotal', 'crucial', 'seamless', 'seamlessly', 'leverage',
+  'utilize', 'foster', 'holistic', 'robust', 'landscape', 'realm', 'testament', 'underscore',
+  'navigate', 'comprehensive', 'moreover', 'furthermore', 'additionally', 'in conclusion',
+  '"it is important to note"', '"plays a vital role"', '"not only ... but also"', 'em dashes'
+];
 
-OUTPUT ONLY THE REWRITTEN TEXT WITH NO PREAMBLE, COMMENTARY, OR EXPLANATION.`;
+function pickRandom(arr, n = 1) {
+  const pool = arr.slice();
+  const picked = [];
+  while (picked.length < n && pool.length) {
+    picked.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  }
+  return n === 1 ? picked[0] : picked;
+}
 
-// ── 13. Live Detection Check (Local Heuristic + ZeroGPT API) ─────────────────
+function countParagraphs(text) {
+  return text.trim().split(/\n\s*\n+/).filter(s => s.trim()).length || 1;
+}
+
+function buildPrompt(text, style = 'natural') {
+  const key = style === 'academic' ? 'academic' : 'natural';
+  const persona = pickRandom(PROMPT_PERSONAS[key]);
+  const rhythm = pickRandom(PROMPT_RHYTHMS);
+  const quirks = pickRandom(PROMPT_QUIRKS[key], 2);
+  const banned = pickRandom(PROMPT_BANNED, 14).join(', ');
+  const paras = countParagraphs(text);
+  const words = countWords(text);
+  const tone = key === 'academic'
+    ? 'Keep a formal, objective register, but write like a real scholar, not like an AI template. No contractions.'
+    : 'Write in an authentic, conversational voice with contractions where a real person would use them.';
+
+  return `Rewrite the text below as if you are ${persona}.
+
+FACTS (non-negotiable)
+- Keep every fact, name, number, date, quote and technical term exactly as given. Add nothing new.
+- Keep exactly ${paras} paragraph${paras > 1 ? 's' : ''}, in the same order, separated by a blank line.
+- Keep the length within 10% of the original (about ${words} words).
+
+HOW TO WRITE
+1. Rebuild the sentences from the meaning. Do not just swap synonyms. Change which noun is the subject, change the order of ideas inside a paragraph where it still makes sense, and combine or split sentences.
+2. Make the rhythm uneven. In each paragraph, aim for sentence lengths roughly like this: ${rhythm}.
+3. Prefer plain, specific wording over abstract wording. Where two words fit, pick the less obvious one, as long as it sounds natural.
+4. ${tone}
+5. Required quirks: ${quirks[0]}; ${quirks[1]}.
+6. Avoid these words and patterns: ${banned}.
+7. Never open with a generic textbook definition (e.g. "X is a framework that...", "X is an interpreted language..."). Open directly with the practical situation, tension, or problem.
+8. Do not open with a framing line and do not end any paragraph with a sentence that sums up or repeats the paragraph. No rhetorical questions, no lists of three adjectives or clauses (no triads), no headings, no markdown.
+
+Return only the rewritten text.
+
+TEXT:
+"""
+${text.trim()}
+"""`;
+}
+
+function buildRefinePrompt(style = 'natural') {
+  const tone = style === 'academic' ? 'Keep the formal register.' : 'Keep it conversational.';
+  return `Now do a second pass on your rewrite. Find the 4 sentences that still sound most like generic AI writing (smooth, balanced, abstract, or summary-like) and rewrite each so it is more specific, plainer, or shaped differently. Change at least two sentence openings. Make sure sentence lengths stay uneven. ${tone} Keep every fact and the paragraph count. Return the full revised text only.`;
+}
+
+// ── 13. Live Detection Check (honest: reports "unavailable" when unreachable) ─
 async function checkZeroGPTLive(text) {
-  const localScore = calculateAiProbability(text);
+  const unavailable = (why) => ({
+    success: false,
+    fakePercentage: null,
+    feedback: why,
+    flagged: []
+  });
 
   try {
-    const headers = {
-      "Content-Type": "application/json"
-    };
+    const headers = { 'Content-Type': 'application/json' };
     if (typeof window === 'undefined') {
-      headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
-      headers["Referer"] = "https://www.zerogpt.com/";
-      headers["Origin"] = "https://www.zerogpt.com";
+      headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+      headers['Referer'] = 'https://www.zerogpt.com/';
+      headers['Origin'] = 'https://www.zerogpt.com';
     }
-
-    const res = await fetch("https://api.zerogpt.com/api/detect/detectText", {
-      method: "POST",
-      headers: headers,
+    const res = await fetch('https://api.zerogpt.com/api/detect/detectText', {
+      method: 'POST',
+      headers,
       body: JSON.stringify({ input_text: text })
     });
-
-    if (!res.ok) {
-      return {
-        success: true,
-        fakePercentage: localScore,
-        feedback: localScore === 0 ? "Your Text is Human Written" : "AI Detected",
-        isHuman: 100 - localScore,
-        flagged: []
-      };
-    }
+    if (!res.ok) return unavailable(`Detector returned HTTP ${res.status}`);
 
     const json = await res.json();
     const data = json.data || {};
-    const remoteScore = typeof data.fakePercentage === 'number' ? data.fakePercentage : localScore;
+    if (typeof data.fakePercentage !== 'number') return unavailable('Detector gave no score');
 
     return {
       success: true,
-      fakePercentage: remoteScore,
-      feedback: data.feedback || (remoteScore === 0 ? "Your Text is Human Written" : "AI Detected"),
-      isHuman: typeof data.isHuman === 'number' ? data.isHuman : (100 - remoteScore),
+      fakePercentage: data.fakePercentage,
+      feedback: data.feedback || '',
+      isHuman: typeof data.isHuman === 'number' ? data.isHuman : (100 - data.fakePercentage),
       aiWords: data.aiWords || 0,
       textWords: data.textWords || 0,
       flagged: Array.isArray(data.specialSentences) ? data.specialSentences : []
     };
   } catch (err) {
-    return {
-      success: true,
-      fakePercentage: localScore,
-      feedback: localScore === 0 ? "Your Text is Human Written" : "AI Detected",
-      isHuman: 100 - localScore,
-      flagged: []
-    };
+    return unavailable('Detector unreachable from this browser');
   }
 }
 
-// ── 14. AI Engine API Callers (Gemini & Groq) ───────────────────────────────
+// ── 14. AI Engine API Callers (Gemini & Groq, optional own key) ──────────────
 async function callGeminiAPI(apiKey, model, text, style) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  
-  const stylePrompt = style === 'academic'
-    ? "Tone: Formal, authoritative, scholarly. Maintain exact paragraph structure and all facts."
-    : "Tone: Balanced, natural human prose. Maintain exact paragraph structure and all facts.";
-
   const payload = {
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            text: `${STEALTH_SYSTEM_PROMPT}\n\n${stylePrompt}\n\nINPUT TEXT TO REWRITE (PRESERVE EXACT PARAGRAPH COUNT):\n"""\n${text}\n"""`
-          }
-        ]
-      }
-    ],
-    generationConfig: {
-      temperature: 0.88,
-      topP: 0.95
-    }
+    contents: [{ role: 'user', parts: [{ text: buildPrompt(text, style) }] }],
+    generationConfig: { temperature: 1.0, topP: 0.95 }
   };
 
   const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
-
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error?.message || `HTTP ${response.status}: ${response.statusText}`);
   }
-
   const data = await response.json();
   const candidate = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!candidate) throw new Error("Empty response received from Gemini.");
-
+  if (!candidate) throw new Error('Empty response received from Gemini.');
   return cleanAIOutput(candidate);
 }
 
 async function callGroqAPI(apiKey, text, style) {
-  const endpoint = "https://api.groq.com/openai/v1/chat/completions";
-
-  const stylePrompt = style === 'academic'
-    ? "Tone: Formal, authoritative, scholarly. Maintain exact paragraph structure and all facts."
-    : "Tone: Balanced, natural human prose. Maintain exact paragraph structure and all facts.";
-
-  const payload = {
-    model: "llama-3.3-70b-versatile",
-    messages: [
-      { role: "system", content: `${STEALTH_SYSTEM_PROMPT}\n\n${stylePrompt}` },
-      { role: "user", content: text }
-    ],
-    temperature: 0.88
-  };
-
-  const response = await fetch(endpoint, {
-    method: "POST",
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
     },
-    body: JSON.stringify(payload)
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: buildPrompt(text, style) }],
+      temperature: 1.0
+    })
   });
-
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
     throw new Error(err.error?.message || `Groq API Error: HTTP ${response.status}`);
   }
-
   const data = await response.json();
   const content = data.choices?.[0]?.message?.content;
-  if (!content) throw new Error("Empty response received from Groq.");
-
+  if (!content) throw new Error('Empty response received from Groq.');
   return cleanAIOutput(content);
 }
 
+// Cleans chat-style wrappers from pasted/API replies.
 function cleanAIOutput(output) {
-  let cleaned = output.trim();
-  cleaned = cleaned.replace(/^"|"$/g, '');
-  cleaned = cleaned.replace(/^Here (is|are) (the|your) humanized.*?\n+/i, '');
+  let cleaned = (output || '').trim();
+  cleaned = cleaned.replace(/^(sure|certainly|of course|okay|ok|here(?:'s| is| are))[^\n]*:\s*\n+/i, '');
+  cleaned = cleaned.replace(/^"""\s*|\s*"""$/g, '');
+  cleaned = cleaned.replace(/^"([\s\S]*)"$/, '$1');
   cleaned = cleanMarkdown(cleaned);
   return cleaned.trim();
 }
@@ -8702,8 +8763,10 @@ const _API = {
   verifyAnchors,
   collectAnchors,
   stripAITells,
-  BENCHMARK_SAMPLES,
-  STEALTH_SYSTEM_PROMPT
+  polishText,
+  buildPrompt,
+  buildRefinePrompt,
+  cleanAIOutput
 };
 
 if (typeof window !== 'undefined') {

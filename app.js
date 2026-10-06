@@ -20,7 +20,7 @@
 (function () {
   'use strict';
 
-  // ── Realistic Benchmark Samples (Multi-Detector Tested: 0% on Grammarly & ZeroGPT) ──
+  // ── Sample inputs (plain AI-style text to try the tool with) ──
   const SAMPLES = [
     {
       name: 'Effective Time Management',
@@ -33,6 +33,26 @@
     {
       name: 'India Election (SIR)',
       text: `Recent protests in India have focused on the Election Commission's Special Intensive Revision (SIR) of electoral rolls, particularly concerns about the possible exclusion of eligible voters from voter lists. In October 2026, protests were held in cities including Delhi and Mumbai, with opposition parties, student groups and civil-society activists demanding greater transparency in the revision process and, in some cases, calling for the resignation of Chief Election Commissioner Gyanesh Kumar. Protesters argue that documentation requirements and changes to voter lists could disenfranchise legitimate voters, while the Election Commission maintains that SIR is intended to remove duplicate, deceased and otherwise ineligible entries and protect the accuracy of electoral rolls. The protests have also led to clashes and detentions in Delhi, making SIR an important ongoing debate about voter rights, electoral openness and the health of India's democratic institutions.`
+    },
+    {
+      name: 'Renewable Energy & Climate',
+      text: `The global transition toward renewable energy represents a critical milestone in combating climate change. Solar photovoltaic arrays and modern wind turbines now generate electricity at costs substantially lower than traditional fossil fuel power plants. Nevertheless, managing generation intermittency demands significant infrastructure investments in high-capacity battery storage and smart grid balancing solutions. Coordinated energy policies are essential to maintain stable grid frequency during peak consumption hours.`
+    },
+    {
+      name: 'Remote Work & Modern Teams',
+      text: `Remote work arrangements have fundamentally altered traditional corporate operations across knowledge industries. By eliminating lengthy daily commutes, distributed employees report higher schedule flexibility and improved work-life balance. However, organizations frequently encounter significant coordination friction, particularly regarding cross-time-zone synchronization and informal collaboration. Successful organizations adopt intentional communication protocols and hybrid scheduling models to preserve cohesive team culture.`
+    },
+    {
+      name: 'Healthcare & Clinical AI',
+      text: `Artificial intelligence is rapidly transforming modern clinical workflows and patient care. Advanced machine learning models assist radiologists in identifying early-stage tumors and subtle fractures with high diagnostic precision. Furthermore, predictive analytics allow healthcare institutions to anticipate patient readmission risks and allocate critical medical resources efficiently. However, integrating automated decision-support systems requires careful clinician oversight to ensure ethical compliance and patient safety.`
+    },
+    {
+      name: 'Cybersecurity & Zero Trust',
+      text: `Modern cybersecurity defense requires a proactive strategy to mitigate sophisticated adversarial threats across enterprise networks. Traditional perimeter security models are increasingly insufficient against credential theft, ransomware, and insider vulnerabilities. Consequently, organizations are adopting Zero Trust architectures that enforce continuous multi-factor authentication and strict least-privilege access controls. Regular employee awareness training remains vital to prevent social engineering attacks and phishing breaches.`
+    },
+    {
+      name: 'Blockchain & Decentralized Ledgers',
+      text: `Blockchain is a distributed ledger technology that records transactions across a decentralized network of computers in a verifiable and tamper-resistant manner. Instead of depending on a central authority like a bank or clearinghouse, consensus algorithms validate transfers and synchronize state across all network nodes. Cryptographic hashes chain each block of data to its predecessor, preventing retroactive alteration without network-wide consensus. While scalability and transaction costs remain active engineering challenges, decentralized networks provide clear audit trails for digital assets.`
     }
   ];
   let sampleIndex = 0;
@@ -57,7 +77,6 @@
   const outputEmptyHint    = document.getElementById('output-empty-hint');
   const statEngine         = document.getElementById('stat-engine');
   const statZeroGpt        = document.getElementById('stat-zerogpt');
-  const statNeural         = document.getElementById('stat-neural');
   const statFacts          = document.getElementById('stat-facts');
   const resultStatusBadge  = document.getElementById('result-status-badge');
 
@@ -79,8 +98,14 @@
   const providerOptions    = document.querySelectorAll('.provider-option');
   const linkGetKey         = document.getElementById('link-get-key');
 
+  // Prompt Kit modal
+  const modalPrompt        = document.getElementById('modal-prompt');
+  const promptBox          = document.getElementById('prompt-box');
+  const replyBox           = document.getElementById('reply-box');
+  const btnFinishReply     = document.getElementById('btn-finish-reply');
+
   // ── State ───────────────────────────────────────────────────────────────────
-  let currentEngine = 'local'; // 'local' (100% free, no key needed) or 'ai' (own key)
+  let currentEngine = 'prompt'; // 'prompt' (Prompt Kit) | 'local' | 'ai' (own key)
   let currentStyle  = 'natural'; // 'natural' or 'academic'
   let selectedProvider = 'gemini';
   let toastTimer = null;
@@ -104,8 +129,8 @@
     const savedModel = localStorage.getItem(STORAGE_KEY_MODEL);
     if (savedModel && selectModel) selectModel.value = savedModel;
 
-    // Default is always 'local' (100% free, no key required)
-    currentEngine = 'local';
+    // Default is Prompt Kit (no key required)
+    currentEngine = 'prompt';
   }
 
   function getApiKey() {
@@ -170,7 +195,7 @@
             showToast('Using your custom API key.');
           }
         } else {
-          showToast('Using Local Engine (100% Free · No API key needed).');
+          showToast(currentEngine === 'prompt' ? 'Prompt Kit: get a prompt for your own AI chat. No key needed.' : 'Local Engine: instant and private, no key needed.');
         }
       });
     });
@@ -221,6 +246,15 @@
       btnVerifyDetector.addEventListener('click', handleManualVerifyDetector);
     }
 
+    // Prompt Kit
+    document.getElementById('btn-close-prompt').addEventListener('click', closePromptModal);
+    modalPrompt.addEventListener('click', (e) => { if (e.target === modalPrompt) closePromptModal(); });
+    document.getElementById('btn-copy-prompt').addEventListener('click', async () => { await copyText(promptBox.value); showToast('Prompt copied.'); });
+    document.getElementById('btn-reroll-prompt').addEventListener('click', () => { renderPrompt(); showToast('New prompt variant generated.'); });
+    document.getElementById('btn-copy-refine').addEventListener('click', async () => { await copyText(TextHumanizer.buildRefinePrompt(currentStyle)); showToast('2nd-pass prompt copied. Send it in the same chat.'); });
+    document.querySelectorAll('[data-open-ai]').forEach(b => b.addEventListener('click', () => openAiChat(b.dataset.openAi)));
+    btnFinishReply.addEventListener('click', handleFinishReply);
+
     // Modal triggers
     btnOpenSettings.addEventListener('click', openSettingsModal);
     btnCloseModal.addEventListener('click', closeSettingsModal);
@@ -260,6 +294,9 @@
       if (e.key === 'Escape' && modalSettings.classList.contains('active')) {
         closeSettingsModal();
       }
+      if (e.key === 'Escape' && modalPrompt.classList.contains('active')) {
+        closePromptModal();
+      }
     });
   }
 
@@ -286,6 +323,79 @@
     }, duration);
   }
 
+  // ── Result Presentation (honest: shows real detector output or "Unverified") ──
+  function setDetectorUI(zg) {
+    const pct = zg && typeof zg.fakePercentage === 'number' ? zg.fakePercentage : null;
+
+    if (statZeroGpt) {
+      if (pct === null) {
+        statZeroGpt.textContent = 'Unverified';
+        statZeroGpt.className = 'warn';
+        statZeroGpt.title = (zg && zg.feedback) || 'Detector unavailable';
+      } else {
+        statZeroGpt.textContent = `${pct.toFixed(1)}% AI`;
+        statZeroGpt.className = pct <= 10 ? 'good' : '';
+        statZeroGpt.title = zg.feedback || '';
+      }
+    }
+
+    if (resultStatusBadge) {
+      resultStatusBadge.style.display = 'inline-block';
+      if (pct === null) {
+        resultStatusBadge.className = 'status-indicator';
+        resultStatusBadge.textContent = 'Not verified · test on a detector';
+      } else if (pct <= 10) {
+        resultStatusBadge.className = 'status-indicator pass';
+        resultStatusBadge.textContent = `${pct.toFixed(1)}% AI · Looks Human`;
+      } else if (pct <= 35) {
+        resultStatusBadge.className = 'status-indicator pass';
+        resultStatusBadge.textContent = `${pct.toFixed(1)}% AI · Mostly Human`;
+      } else {
+        resultStatusBadge.className = 'status-indicator';
+        resultStatusBadge.textContent = `${pct.toFixed(1)}% AI · Try Re-roll / 2nd pass`;
+      }
+    }
+  }
+
+  async function presentResult(sourceText, resultText, engineName) {
+    outputEl.textContent = resultText;
+    updateOutputCounts();
+
+    const missingAnchors = TextHumanizer.verifyAnchors(sourceText, resultText);
+    const totalAnchors = TextHumanizer.collectAnchors(sourceText);
+
+    if (outputEmptyHint) outputEmptyHint.style.display = 'none';
+    if (scoreRow) scoreRow.style.display = 'flex';
+    if (statEngine) statEngine.textContent = engineName;
+
+    if (statFacts) {
+      if (missingAnchors.length === 0) {
+        statFacts.textContent = `100% (${totalAnchors.length} anchors)`;
+        statFacts.className = 'good';
+        statFacts.title = '';
+      } else {
+        statFacts.textContent = `${totalAnchors.length - missingAnchors.length}/${totalAnchors.length} retained`;
+        statFacts.className = 'warn';
+        statFacts.title = `Missing: ${missingAnchors.join(', ')}`;
+      }
+    }
+
+    if (statZeroGpt) {
+      statZeroGpt.textContent = 'Checking...';
+      statZeroGpt.className = '';
+    }
+    spinText.textContent = 'Checking ZeroGPT live...';
+    const zg = await TextHumanizer.checkZeroGPTLive(resultText);
+    setDetectorUI(zg);
+    return zg;
+  }
+
+  function detectorToast(zg) {
+    return typeof zg.fakePercentage === 'number'
+      ? `ZeroGPT: ${zg.fakePercentage.toFixed(1)}% AI`
+      : 'Detector unreachable. Please test the text on ZeroGPT/GPTZero yourself.';
+  }
+
   // ── Humanize Execution ──────────────────────────────────────────────────────
   async function handleHumanize() {
     const text = inputEl.value.trim();
@@ -295,96 +405,114 @@
       return;
     }
 
+    // Prompt Kit: no network call, hand the user a ready-made prompt
+    if (currentEngine === 'prompt') {
+      openPromptModal(text);
+      return;
+    }
+
     const key = getApiKey();
     if (currentEngine === 'ai' && !key) {
       openSettingsModal();
-      showToast('Paste an API key or switch back to Local (Free).');
+      showToast('Paste an API key or switch to Prompt Kit / Local.');
       return;
     }
 
     btnHumanize.disabled = true;
     spinner.style.display = 'flex';
-    spinText.textContent = 'Synthesizing prose...';
+    spinText.textContent = 'Rewriting...';
 
     try {
       let resultText = '';
-      let engineName = 'Local Engine (Free)';
+      let engineName = 'Local Engine';
 
       if (currentEngine === 'ai') {
         const model = selectModel ? selectModel.value : 'gemini-2.0-flash';
-        engineName = selectedProvider === 'gemini' ? `Gemini (${model})` : 'Groq (Llama 3.3)';
-        if (selectedProvider === 'gemini') {
-          resultText = await TextHumanizer.callGeminiAPI(key, model, text, currentStyle);
-        } else {
-          resultText = await TextHumanizer.callGroqAPI(key, text, currentStyle);
-        }
+        engineName = selectedProvider === 'gemini' ? `Gemini (${model}) + polish` : 'Groq (Llama 3.3) + polish';
+        const raw = selectedProvider === 'gemini'
+          ? await TextHumanizer.callGeminiAPI(key, model, text, currentStyle)
+          : await TextHumanizer.callGroqAPI(key, text, currentStyle);
+        resultText = TextHumanizer.polishText(raw, currentStyle);
       } else {
-        // Core single-source engine: deterministic, instant, zero key
         resultText = TextHumanizer.humanizeLocalText(text, currentStyle);
       }
 
-      outputEl.textContent = resultText;
-      updateOutputCounts();
-
-      // epoko77 Fact Retention Verification
-      const missingAnchors = TextHumanizer.verifyAnchors(text, resultText);
-      const totalAnchors = TextHumanizer.collectAnchors(text);
-
-      if (outputEmptyHint) outputEmptyHint.style.display = 'none';
-      if (scoreRow) scoreRow.style.display = 'flex';
-      if (statEngine) statEngine.textContent = engineName;
-
-      if (statNeural) {
-        statNeural.textContent = 'Clean · 0%';
-        statNeural.className = 'good';
-        statNeural.title = 'Verified 0% on Grammarly & neural Transformer classifiers';
-      }
-
-      if (statFacts) {
-        if (missingAnchors.length === 0) {
-          statFacts.textContent = `100% (${totalAnchors.length} anchors retained)`;
-          statFacts.className = 'good';
-        } else {
-          statFacts.textContent = `${totalAnchors.length - missingAnchors.length}/${totalAnchors.length} retained`;
-          statFacts.className = '';
-          statFacts.title = `Missing: ${missingAnchors.join(', ')}`;
-        }
-      }
-
-      // Check live ZeroGPT detection in background
-      spinText.textContent = 'Checking ZeroGPT live...';
-      const zg = await TextHumanizer.checkZeroGPTLive(resultText);
-
-      const fakePct = typeof zg.fakePercentage === 'number' ? zg.fakePercentage : 0;
-      if (statZeroGpt) {
-        statZeroGpt.textContent = `${fakePct.toFixed(1)}% AI`;
-        if (fakePct <= 10) {
-          statZeroGpt.className = 'good';
-        } else {
-          statZeroGpt.className = '';
-        }
-      }
-
-      if (resultStatusBadge) {
-        resultStatusBadge.style.display = 'inline-block';
-        if (fakePct <= 10) {
-          resultStatusBadge.className = 'status-indicator pass';
-          resultStatusBadge.textContent = '0% AI · Human Written';
-        } else if (fakePct <= 35) {
-          resultStatusBadge.className = 'status-indicator pass';
-          resultStatusBadge.textContent = `${fakePct.toFixed(1)}% AI · Likely Human`;
-        } else {
-          resultStatusBadge.className = 'status-indicator';
-          resultStatusBadge.textContent = `${fakePct.toFixed(1)}% AI Detected`;
-        }
-      }
-
-      showToast(`Conversion complete · ZeroGPT: ${fakePct.toFixed(1)}% AI (${zg.feedback || 'Checked'})`);
+      const zg = await presentResult(text, resultText, engineName);
+      showToast(`Conversion complete · ${detectorToast(zg)}`, 4500);
     } catch (err) {
       console.error(err);
       showToast(`Error: ${err.message || 'Transformation failed'}`);
     } finally {
       btnHumanize.disabled = false;
+      spinner.style.display = 'none';
+    }
+  }
+
+  // ── Prompt Kit ──────────────────────────────────────────────────────────────
+  let promptSourceText = '';
+
+  function renderPrompt() {
+    promptBox.value = TextHumanizer.buildPrompt(promptSourceText, currentStyle);
+  }
+
+  function openPromptModal(text) {
+    promptSourceText = text;
+    renderPrompt();
+    replyBox.value = '';
+    modalPrompt.classList.add('active');
+  }
+
+  function closePromptModal() {
+    modalPrompt.classList.remove('active');
+  }
+
+  async function copyText(str) {
+    try {
+      await navigator.clipboard.writeText(str);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = str;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+  }
+
+  async function openAiChat(target) {
+    const prompt = promptBox.value;
+    await copyText(prompt);
+    const q = encodeURIComponent(prompt);
+    let url = 'https://gemini.google.com/app';
+    if (target === 'chatgpt') url = q.length < 6000 ? `https://chatgpt.com/?q=${q}` : 'https://chatgpt.com/';
+    if (target === 'claude') url = q.length < 6000 ? `https://claude.ai/new?q=${q}` : 'https://claude.ai/new';
+    window.open(url, '_blank', 'noopener');
+    showToast('Prompt copied. If the chat opens empty, just paste it.', 4000);
+  }
+
+  async function handleFinishReply() {
+    const reply = replyBox.value.trim();
+    if (!reply) {
+      showToast("Paste the AI's reply first.");
+      replyBox.focus();
+      return;
+    }
+
+    btnFinishReply.disabled = true;
+    closePromptModal();
+    spinner.style.display = 'flex';
+    spinText.textContent = 'Polishing...';
+
+    try {
+      const cleaned = TextHumanizer.cleanAIOutput(reply);
+      const polished = TextHumanizer.polishText(cleaned, currentStyle);
+      const zg = await presentResult(promptSourceText, polished, 'Prompt Kit + local polish');
+      showToast(`Done · ${detectorToast(zg)}`, 4500);
+    } catch (err) {
+      console.error(err);
+      showToast(`Error: ${err.message || 'Polishing failed'}`);
+    } finally {
+      btnFinishReply.disabled = false;
       spinner.style.display = 'none';
     }
   }
@@ -402,32 +530,8 @@
 
     try {
       const zg = await TextHumanizer.checkZeroGPTLive(text);
-      const fakePct = typeof zg.fakePercentage === 'number' ? zg.fakePercentage : 0;
-
-      if (statZeroGpt) {
-        statZeroGpt.textContent = `${fakePct.toFixed(1)}% AI`;
-        statZeroGpt.className = fakePct <= 10 ? 'good' : '';
-      }
-
-      if (statNeural) {
-        statNeural.textContent = 'Clean · 0%';
-        statNeural.className = 'good';
-      }
-
-      if (resultStatusBadge) {
-        resultStatusBadge.style.display = 'inline-block';
-        if (fakePct <= 10) {
-          resultStatusBadge.className = 'status-indicator pass';
-          resultStatusBadge.textContent = '0% AI · Human Written';
-        } else {
-          resultStatusBadge.className = 'status-indicator';
-          resultStatusBadge.textContent = `${fakePct.toFixed(1)}% AI Detected`;
-        }
-      }
-
-      showToast(`ZeroGPT Result: ${fakePct.toFixed(1)}% AI — "${zg.feedback || 'Checked'}"`, 4500);
-    } catch (err) {
-      showToast(`Detection query failed: ${err.message}`);
+      setDetectorUI(zg);
+      showToast(detectorToast(zg), 4500);
     } finally {
       btnVerifyDetector.disabled = false;
     }
