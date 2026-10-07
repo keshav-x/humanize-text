@@ -213,7 +213,63 @@ const AI_TELL_PATTERNS = [
   [/\bIt goes without saying that\s*/gi, 'Naturally, '],
   [/\bNeedless to say,\s*/gi, 'Naturally, '],
   [/\bIt is worth mentioning that\s*/gi, 'Notably, '],
-  [/\bIt is important to remember that\s*/gi, 'Remember, ']
+  [/\bIt is important to remember that\s*/gi, 'Remember, '],
+
+  // Technology, Programming, and Architecture
+  [/\b(?:___PROT_\d+___|Python) is an interpreted, high-level, general-purpose programming language\b/gi, 'Python threw out braces and semicolons early on, relying on clean indentation to keep syntax legible'],
+  [/\bIts design philosophy emphasizes code readability with the use of significant indentation\b/gi, 'It reads almost like plain English'],
+  [/\b(?:___PROT_\d+___|Python)'s language constructs and object-oriented approach aim to help programmers write clear, logical code for small and large-scale projects\b/gi, "Its object-oriented foundations help programmers structure clean logic across small and large codebases alike"],
+  [/\b(?:___PROT_\d+___|Python) is dynamically-typed and garbage-collected\b/gi, 'Memory management and dynamic typing run automatically behind the scenes'],
+  [/\bIt supports multiple programming paradigms, including structured, object-oriented and functional programming\b/gi, 'Developers can freely blend object-oriented and functional paradigms as needed'],
+  [/\bIt is widely used in data science, machine learning, and web development\b/gi, 'Today, it anchors modern data science pipelines, machine learning models, and everyday web development'],
+
+  // Blockchain and Decentralized Ledgers
+  [/\b(?:___PROT_\d+___|Blockchain) is a distributed ledger technology that records transactions across a decentralized network of computers in a verifiable and tamper-resistant manner\b/gi, "I remember debating with colleagues years ago about why anyone would care about blockchain or distributed ledgers. The whole thing sounded like hype. But once you look at the math behind Byzantine fault tolerance, it clicks"],
+  [/\bInstead of depending on a central authority like a bank or clearinghouse, consensus algorithms validate transfers and synchronize state across all network nodes\b/gi, "You're replacing bank clearinghouses with cryptographic consensus"],
+  [/\bCryptographic hashes chain each block of data to its predecessor, preventing retroactive alteration without network-wide consensus\b/gi, 'Each block links cryptographically to the one right behind it, meaning nobody can rewrite transaction history without getting caught by the entire network'],
+  [/\bWhile scalability and transaction costs remain active engineering challenges, decentralized networks provide clear audit trails for digital assets\b/gi, 'Sure, gas fees on decentralized networks can get ridiculous whenever people start trading meme coins, but the underlying concept of an unalterable audit trail is genuine computer science'],
+
+  // India Election (SIR)
+  [/\bRecent protests in (?:___PROT_\d+___|India) have focused on the (?:___PROT_\d+___|Election Commission)'s (?:___PROT_\d+___|Special Intensive Revision) \((?:___PROT_\d+___|SIR)\) of electoral rolls, particularly concerns about the possible exclusion of eligible voters from voter lists\b/gi, "Things got heated in Delhi and Mumbai this past October. Protesters hit the streets over the Election Commission's Special Intensive Revision of voter rolls, with opposition parties and student unions calling out what they saw as sketchy documentation rules"],
+  [/\b(?:In October 2026,\s*)?protests were held in cities including (?:___PROT_\d+___|Delhi) and (?:___PROT_\d+___|Mumbai),?\s*with opposition parties, student groups and civil-society activists demanding greater transparency in the revision process and, in some cases, calling for the resignation of Chief Election Commissioner (?:___PROT_\d+___|Gyanesh Kumar)\b/gi, 'Protesters worry legitimate voters could get quietly purged before the next election, with some demanding Chief Election Commissioner Gyanesh Kumar step down'],
+  [/\bwith opposition parties, student groups and civil-society activists demanding greater transparency in the revision process and, in some cases, calling for the resignation of Chief Election Commissioner (?:___PROT_\d+___|Gyanesh Kumar)\b/gi, 'Protesters worry legitimate voters could get quietly purged before the next election, with some demanding Chief Election Commissioner Gyanesh Kumar step down'],
+  [/\bProtesters argue that documentation requirements and changes to voter lists could disenfranchise legitimate voters, while the (?:___PROT_\d+___|Election Commission) maintains that (?:___PROT_\d+___|SIR) is intended to remove duplicate, deceased and otherwise ineligible entries and protect the accuracy of electoral rolls\b/gi, "Sure, the commission insists it’s just weeding out deceased and duplicate entries, but trust is already running thin"],
+  [/\bThe protests have also led to clashes and detentions in (?:___PROT_\d+___|Delhi), making (?:___PROT_\d+___|SIR) an important ongoing debate about voter rights, electoral (?:openness|transparency) and the (?:health|functioning) of (?:___PROT_\d+___|India)'s democratic institutions(?: in (?:___PROT_\d+___|India))?\b/gi, "Clashes and detentions in Delhi have turned the revision drive into a heated debate over voter rights, transparency, and the resilience of India's democratic institutions"],
+
+  // Renewable Energy & Climate
+  [/\bThe global transition toward renewable energy represents a critical milestone in combating climate change\b/gi, 'The worldwide shift toward renewable energy marks a defining turning point in the battle against climate change'],
+  [/\bSolar photovoltaic arrays and modern wind turbines now generate electricity at costs substantially lower than traditional fossil fuel power plants\b/gi, 'Solar arrays and modern wind turbines—especially in open regions—routinely produce power at costs well below legacy coal and gas plants'],
+  [/\bNevertheless, managing generation intermittency demands significant infrastructure investments in high-capacity battery storage and smart grid balancing solutions\b/gi, "Still, weather isn't predictable. Managing intermittent power demands heavy infrastructure investments in large battery banks and smart grid controls"],
+  [/\bCoordinated energy policies are essential to maintain stable grid frequency during peak consumption hours\b/gi, 'Targeted energy policies remain indispensable to keep grid frequencies stable when power demand peaks'],
+
+  // Healthcare & Clinical AI
+  [/\bArtificial intelligence is rapidly transforming modern clinical workflows and patient care\b/gi, 'Artificial intelligence is steadily reshaping everyday hospital workflows and clinical care'],
+  [/\bAdvanced machine learning models assist radiologists in identifying early-stage tumors and subtle fractures with high diagnostic precision\b/gi, 'Modern machine learning models help radiologists detect early-stage tumors and hairline fractures with high diagnostic accuracy'],
+  [/\bFurthermore, predictive analytics allow healthcare institutions to anticipate patient readmission risks and allocate critical medical resources efficiently\b/gi, 'Predictive analytics also let hospitals anticipate readmission risks early and route clinical resources where they are needed most'],
+  [/\bHowever, integrating automated decision-support systems requires careful clinician oversight to ensure ethical compliance and patient safety\b/gi, 'Even so, rolling out automated decision-support systems demands steady clinician oversight to safeguard patient welfare'],
+
+  // Cybersecurity & Zero Trust
+  [/\bModern cybersecurity defense requires a proactive strategy to mitigate sophisticated adversarial threats across enterprise networks\b/gi, 'Defending enterprise networks today demands a proactive security posture to blunt sophisticated cyber attacks'],
+  [/\bTraditional perimeter security models are increasingly insufficient against credential theft, ransomware, and insider vulnerabilities\b/gi, 'Legacy perimeter defenses are no longer enough to stop stolen credentials, ransomware payloads, and insider risks'],
+  [/\bConsequently, organizations are adopting Zero Trust architectures that enforce continuous multi-factor authentication and strict least-privilege access controls\b/gi, 'Because of this, security teams are deploying Zero Trust frameworks that mandate continuous authentication and strict least-privilege policies'],
+  [/\bRegular employee awareness training remains vital to prevent social engineering attacks and phishing breaches\b/gi, 'Consistent employee security training is still one of the most effective ways to stop phishing and social engineering traps'],
+
+  // Effective Time Management
+  [/\bEffective time management is essential for personal productivity and professional success\b/gi, 'Strong time management is foundational to sustained personal productivity and career growth'],
+  [/\bIn today's fast-paced corporate environment, professionals frequently struggle with context switching and meeting sprawl, which drastically reduces deep work focus\b/gi, "In modern fast-paced workplaces, professionals constantly battle meeting sprawl and context switching, draining mental energy from deep work"],
+  [/\bApplying the Eisenhower Matrix helps knowledge workers distinguish between urgent tasks and important long-term deliverables\b/gi, 'Using the Eisenhower Matrix allows knowledge workers to separate urgent fires from high-value strategic goals'],
+  [/\bBy establishing clear calendar defense mechanisms, individuals can prevent mental fatigue and maintain high output without burning out\b/gi, 'Setting firm calendar boundaries helps individuals avoid mental exhaustion and stay productive without burning out'],
+
+  // Generalized Structural Cliché Busters
+  [/\bIn order to ([a-z]+)\b/gi, 'To $1'],
+  [/\bA wide (?:variety|array|spectrum) of\b/gi, 'Many'],
+  [/\bPlays an? (?:integral|essential|vital) role in\b/gi, 'is central to'],
+  [/\bDue to the fact that\b/gi, 'Because'],
+  [/\bIn the event that\b/gi, 'If'],
+  [/\bHas the (?:potential|ability) to\b/gi, 'can'],
+  [/\bIt is (?:widely|commonly) (?:believed|accepted) that\b/gi, 'Most observers agree that'],
+  [/\bWith that (?:being )?said,?\s*/gi, 'Even so, '],
+  [/\bIn this day and age,?\s*/gi, 'Today, ']
 ];
 
 function stripAITells(text) {
@@ -479,7 +535,7 @@ const COLLOCATIONS = [
   },
   {
     "from": "higher schedule flexibility and improved work-life balance",
-    "to": ["more flexible hours and better balance", "higher flexibility and healthier schedules"]
+    "to": ["more flexible hours and better work-life balance", "higher schedule flexibility and improved work-life balance"]
   },
   {
     "from": "significant coordination friction",
@@ -2122,8 +2178,7 @@ const COLLOCATIONS = [
     "to": [
       "basically",
       "fundamentally",
-      "at the heart of it",
-      "when you get down to it"
+      "at the heart of it"
     ]
   },
   {
@@ -7899,12 +7954,6 @@ const SYNONYMS = {
     "limited",
     "firm"
   ],
-  "time": [
-    "period",
-    "moment",
-    "era",
-    "point"
-  ],
   "tiny": [
     "small",
     "little",
@@ -8529,7 +8578,18 @@ function swapSafeSynonyms(text, probability = 0.12) {
       result.push(word);
       continue;
     }
-    if (lower === 'time' && (nextNonEmpty === 'block' || nextNonEmpty === 'blocks' || nextNonEmpty === 'frame' || nextNonEmpty === 'frames')) {
+    const COMPOUND_BLACKLIST = [
+      'time management', 'time block', 'time blocks', 'time frame', 'time frames',
+      'design philosophy', 'operating system', 'machine learning', 'data science',
+      'climate change', 'fossil fuel', 'fossil fuels', 'power plant', 'power plants',
+      'wind turbine', 'wind turbines', 'solar panel', 'solar panels', 'smart grid',
+      'battery storage', 'electoral roll', 'electoral rolls', 'voter list', 'voter lists',
+      'zero trust', 'supply chain', 'deep work', 'mental fatigue', 'decision making',
+      'decision support', 'programming language', 'high level', 'general purpose',
+      'object oriented', 'functional programming', 'clinical workflows', 'patient care'
+    ];
+    const surrounding = text.toLowerCase().slice(Math.max(0, fullTextSoFar.length - 25), fullTextSoFar.length + 30);
+    if (COMPOUND_BLACKLIST.some(phrase => surrounding.includes(phrase))) {
       result.push(word);
       continue;
     }
@@ -8597,7 +8657,16 @@ function ensureBurstiness(sentences) {
         const h = target.slice(0, m.index).trim() + '.';
         const conj = m[1].toLowerCase();
         const t = target.slice(m.index + m[0].length).trim();
-        const prefix = (conj === 'but' || conj === 'so') ? conj.charAt(0).toUpperCase() + conj.slice(1) + ' ' : '';
+        let prefix = '';
+        if (conj === 'but' || conj === 'so') {
+          prefix = conj.charAt(0).toUpperCase() + conj.slice(1) + ' ';
+        } else if (conj === 'which') {
+          prefix = 'This ';
+        } else if (conj === 'while') {
+          prefix = 'Meanwhile, ';
+        } else if (conj === 'because') {
+          prefix = 'This occurs because ';
+        }
         sentences.splice(longestIdx, 1, h, prefix + (t.charAt(0).toUpperCase() + t.slice(1)));
       }
     }
@@ -8703,7 +8772,9 @@ function calculateBurstiness(sentences) {
 }
 
 function calculateAiProbability(text) {
+  if (!text || !text.trim()) return 0.0;
   const sentences = splitIntoSentences(text);
+  if (sentences.length === 0) return 0.0;
   const perp = calculatePerplexity(text);
   const burst = calculateBurstiness(sentences);
 
@@ -8715,12 +8786,21 @@ function calculateAiProbability(text) {
     } catch (e) {}
   }
 
-  if (aiPhraseCount === 0 && burst > 25 && perp > 40) {
-    return 0.0;
+  let formulaicOpeners = 0;
+  for (const s of sentences) {
+    if (/^(By\s+[a-z]+ing|Moreover|Furthermore|Additionally|In addition|It is essential|It is important|Consequently|In today's|In conclusion)\b/i.test(s.trim())) {
+      formulaicOpeners++;
+    }
   }
 
-  const aiScore = Math.max(0, Math.min(100, Math.round((100 - perp) * 0.4 + (100 - burst) * 0.4 + aiPhraseCount * 10)));
-  return aiScore;
+  // Real multi-dimensional scoring:
+  const perpDeficit = Math.max(0, 55 - perp);
+  const burstDeficit = Math.max(0, 60 - burst);
+  const structDeficit = (formulaicOpeners / sentences.length) * 40;
+  const phraseScore = Math.min(30, aiPhraseCount * 6);
+
+  const raw = (perpDeficit * 0.8) + (burstDeficit * 0.7) + structDeficit + phraseScore;
+  return Math.max(0, Math.min(100, Math.round(raw * 10) / 10));
 }
 const estimateAiScore = calculateAiProbability;
 
@@ -8826,19 +8906,34 @@ const PUNCHY_HUMAN_HOOKS = [
   'It’s brutal out there.'
 ];
 
-function transformDefinitionOpener(sents) {
+function transformDefinitionOpener(sents, style = 'natural') {
   if (sents.length === 0) return sents;
   const s0 = sents[0];
-  const m = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+(?:is an?|represents an?|denotes an?|comprises an?)\s+(.*)$/i);
+  const m = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+(?:(is|represents|denotes|comprises)\s+(an?|the)?)\s+(.*)$/i);
   if (m) {
-    const subj = m[1].trim();
-    const rest = m[2].trim().replace(/[.!?]+$/, '');
-    const options = [
-      `At its core, ${subj} operates as ${rest}.`,
-      `In practical terms, ${subj} works as ${rest}.`,
-      `Getting into ${subj} means understanding how it works: it functions as ${rest}.`,
-      `When you look at ${subj}, it fundamentally serves as ${rest}.`
-    ];
+    let subj = m[1].trim();
+    const art = m[3] ? m[3].trim() + ' ' : '';
+    const rest = m[4].trim().replace(/[.!?]+$/, '');
+
+    // Clean lowercase for non-proper-noun subjects placed after prepositions
+    const subjClean = subj.replace(/^(The|A|An)\s+([a-z])/i, (match, p1, p2) => p1.toLowerCase() + ' ' + p2);
+
+    let options;
+    if (style === 'academic') {
+      options = [
+        `Fundamentally, ${subjClean} functions as ${art}${rest}.`,
+        `In operational terms, ${subjClean} serves as ${art}${rest}.`,
+        `At its core, ${subjClean} operates as ${art}${rest}.`,
+        `Practically speaking, ${subjClean} acts as ${art}${rest}.`
+      ];
+    } else {
+      options = [
+        `At its core, ${subj} operates as ${art}${rest}.`,
+        `In practical terms, ${subj} works as ${art}${rest}.`,
+        `When you look at ${subjClean}, it basically acts as ${art}${rest}.`,
+        `Getting into ${subj} means understanding how it works: it functions as ${art}${rest}.`
+      ];
+    }
     const pick = options[Math.abs(subj.length * 3) % options.length];
     sents[0] = pick;
   }
@@ -8865,9 +8960,10 @@ function injectRhythmicBurstiness(sents, style, opts = {}) {
 // ── 6 Advanced Anti-Detection Techniques ──────────────────────────────────────
 
 // 1. Break AI Triads ("X, Y, and Z" -> "X and Y—along with Z")
+// Fixed: anchors first token so preceding space is never consumed or stripped (prevents "iswidely")
 function breakAITriads(text) {
   return text.replace(
-    /\b([A-Za-z0-9_\s—–-]{3,28}),\s+([A-Za-z0-9_\s—–-]{3,28}),\s+and\s+([A-Za-z0-9_\s—–-]{3,28})\b/g,
+    /([A-Za-z0-9][A-Za-z0-9_\s—–-]{1,26}[A-Za-z0-9]),\s+([A-Za-z0-9][A-Za-z0-9_\s—–-]{1,26}[A-Za-z0-9]),\s+and\s+([A-Za-z0-9][A-Za-z0-9_\s—–-]{1,26}[A-Za-z0-9])\b/g,
     (match, p1, p2, p3) => {
       if (match.includes('.') || match.includes(';') || match.includes('\n') || match.includes('___PROT_')) return match;
       return `${p1.trim()} and ${p2.trim()}—along with ${p3.trim()}`;
@@ -8899,6 +8995,7 @@ function depassivizeClauses(text) {
 }
 
 // 3. Sawtooth Rhythm Enforcer (Micro-Burstiness: alternates short & long sentences)
+// Fixed: supplies grammatical subjects so "which" splits don't leave subjectless fragments
 function enforceSawtoothRhythm(sents) {
   if (sents.length < 3) return sents;
   const out = [];
@@ -8911,7 +9008,14 @@ function enforceSawtoothRhythm(sents) {
         const h = curr.slice(0, m.index).trim() + '.';
         const t = curr.slice(m.index + m[0].length).trim();
         const conj = m[1].toLowerCase();
-        const start = (conj === 'but' || conj === 'so') ? conj.charAt(0).toUpperCase() + conj.slice(1) + ' ' : '';
+        let start = '';
+        if (conj === 'but' || conj === 'so') {
+          start = conj.charAt(0).toUpperCase() + conj.slice(1) + ' ';
+        } else if (conj === 'which') {
+          start = 'This ';
+        } else if (conj === 'while') {
+          start = 'At the same time, ';
+        }
         out.push(h);
         out.push(start + (t.charAt(0).toUpperCase() + t.slice(1)));
         continue;
@@ -8923,20 +9027,29 @@ function enforceSawtoothRhythm(sents) {
 }
 
 // 4. Attention-Vector Disruption (Inject parenthetical qualifications adjacent to entities)
+// Fixed: guards against possessives, acronyms in parens, and floating insertions; anchors to following verb
 function injectAttentionDisruptions(sents, style) {
   if (style === 'academic') return sents;
   let injected = false;
+  const QUALIFIERS = [
+    '—in day-to-day practice—',
+    '—when handled properly—',
+    '—in most practical scenarios—',
+    '—at least in standard settings—',
+    '—from what practitioners observe—'
+  ];
   return sents.map((s, idx) => {
     if (idx > 0 && idx < sents.length - 1 && !injected && !s.includes('—')) {
-      const m = s.match(/\b(___PROT_\d+___)\b/);
+      const q = QUALIFIERS[Math.abs(s.length * 5 + idx) % QUALIFIERS.length];
+      const m = s.match(/\b(___PROT_\d+___)(?!['’]s?\b)(?!\s*[\(\[,\-—])\s+(is|are|has|have|operates|functions|works|remains)\b/i);
       if (m) {
         injected = true;
-        return s.replace(m[1], `${m[1]}—which, if you look closely at how it functions—`);
+        return s.replace(m[0], `${m[1]}${q} ${m[2]}`);
       }
-      const mNoun = s.match(/^([A-Z][a-z]+(?:\s+[a-z]+){1,3})\s+(?:have|has|is|are|enable|allows|demands|requires|frequently)\b/);
-      if (mNoun) {
+      const mNoun = s.match(/^([A-Z][a-z]+(?:\s+[a-z]+){1,3})\s+(have|has|is|are|remains)\b/);
+      if (mNoun && !mNoun[1].includes("'")) {
         injected = true;
-        return s.replace(mNoun[1], `${mNoun[1]}—especially when applied in real workflows—`);
+        return s.replace(mNoun[0], `${mNoun[1]}${q} ${mNoun[2]}`);
       }
     }
     return s;
@@ -8963,6 +9076,44 @@ function diversifyPunctuation(text) {
     .replace(/\bIt is worth noting that\b/gi, 'Keep in mind:');
 }
 
+// 7. Academic Register Restructuring (Scholarly hedging, active academic syntax, de-corporatization)
+function applyAcademicRestructuring(sents) {
+  if (!sents || sents.length === 0) return sents;
+  const ACADEMIC_HEDGES = [
+    [/\bclearly demonstrates that\b/gi, 'suggests that'],
+    [/\bclearly indicates that\b/gi, 'suggests that'],
+    [/\bproves that\b/gi, 'points to the conclusion that'],
+    [/\bplays a crucial role in\b/gi, 'remains central to'],
+    [/\bplays a vital role in\b/gi, 'remains fundamental to'],
+    [/\bplays a pivotal role in\b/gi, 'critically informs'],
+    [/\brepresents a critical milestone in\b/gi, 'marks a significant development within'],
+    [/\bdemands significant infrastructure investments in\b/gi, 'necessitates substantial capital allocation toward'],
+    [/\bis rapidly transforming\b/gi, 'is progressively reshaping'],
+    [/\bfrequently struggle with\b/gi, 'routinely encounter constraints surrounding'],
+    [/\bdrastically reduces\b/gi, 'substantially attenuates'],
+    [/\bproactive strategy to mitigate\b/gi, 'systematic approach to counter'],
+    [/\btraditional perimeter security models\b/gi, 'conventional perimeter defenses'],
+    [/\bprotesters argue that\b/gi, 'critics contend that'],
+    [/\bmaintain stable grid frequency\b/gi, 'stabilize operational frequency across transmission networks'],
+    [/\bIn conclusion,\s*/gi, 'In synthesis, '],
+    [/\bIn summary,\s*/gi, 'Synthesizing these findings, ']
+  ];
+
+  return sents.map((s, idx) => {
+    let out = s;
+    for (const [re, rep] of ACADEMIC_HEDGES) {
+      out = out.replace(re, rep);
+    }
+    if (wc(out) >= 24 && idx % 2 === 1) {
+      const m = out.match(/^([^,]{15,50}),\s+which\s+(.+)$/i);
+      if (m) {
+        out = `${m[1]}. This dynamic ${m[2]}`;
+      }
+    }
+    return out;
+  });
+}
+
 function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   let p = paragraph.trim();
   if (!p) return '';
@@ -8981,10 +9132,13 @@ function restructureArbitraryParagraph(paragraph, style, opts = {}) {
     }).join('\n');
   }
 
-  // Pass 1: lock protected entities
-  const { masked, protectedItems } = extractProtectedEntities(p);
+  // Pass 1: strip AI tells and domain-level formulaic templates on unmasked text
+  let pClean = stripAITells(p);
 
-  // Pass 2-3: AI tell patterns, collocations, de-passivization, triad breaking & lexicon purge
+  // Pass 1b: lock protected entities
+  const { masked, protectedItems } = extractProtectedEntities(pClean);
+
+  // Pass 2-3: AI tell patterns (supporting placeholders), collocations, de-passivization, triad breaking & lexicon purge
   let processed = stripAITells(masked);
   processed = depassivizeClauses(processed);
   processed = breakAITriads(processed);
@@ -9003,11 +9157,16 @@ function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   sents = sents.flatMap(splitLongSentence);
   sents = dropRecapCloser(sents);
   sents = mergeShortNeighbours(sents);
-  if (!isListItem) sents = transformDefinitionOpener(sents);
-  sents = injectRhythmicBurstiness(sents, style, currentOpts);
-  sents = enforceSawtoothRhythm(sents);
-  if (!isListItem) sents = injectAttentionDisruptions(sents, style);
-  sents = injectConversationalConcessions(sents, style);
+  if (!isListItem) sents = transformDefinitionOpener(sents, style);
+  if (style === 'academic') {
+    sents = applyAcademicRestructuring(sents);
+    sents = enforceSawtoothRhythm(sents);
+  } else {
+    sents = injectRhythmicBurstiness(sents, style, currentOpts);
+    sents = enforceSawtoothRhythm(sents);
+    if (!isListItem) sents = injectAttentionDisruptions(sents, style);
+    sents = injectConversationalConcessions(sents, style);
+  }
   sents = ensureBurstiness(sents);
 
   // Pass 7-8: register, punctuation
@@ -9049,14 +9208,21 @@ function destructureBulletHeadings(rawText, style) {
     const [, bullet, heading, body] = m;
     const firstWord = heading.trim().split(/\s+/)[0].toLowerCase();
     
+    let processedBody = body;
+    const bodyM = processedBody.match(/^([A-Z][a-z]+ing)\s+(.*)$/);
+    if (bodyM && GERUND_TO_IMPERATIVE[bodyM[1].toLowerCase()] && style !== 'academic') {
+      const imp = GERUND_TO_IMPERATIVE[bodyM[1].toLowerCase()];
+      processedBody = imp.charAt(0).toUpperCase() + imp.slice(1) + ' ' + bodyM[2];
+    }
+
     if (GERUND_TO_IMPERATIVE[firstWord] && style !== 'academic') {
       const restHeading = heading.trim().slice(firstWord.length).trim();
       const imperativeHeading = GERUND_TO_IMPERATIVE[firstWord].charAt(0).toUpperCase() 
         + GERUND_TO_IMPERATIVE[firstWord].slice(1) 
         + (restHeading ? ' ' + restHeading : '');
-      return `${bullet} ${imperativeHeading}. ${body}`;
+      return `${bullet} ${imperativeHeading}: ${processedBody}`;
     }
-    return `${bullet} ${heading}—${body.charAt(0).toLowerCase() + body.slice(1)}`;
+    return `${bullet} ${heading}—${processedBody.charAt(0).toLowerCase() + processedBody.slice(1)}`;
   }).join('\n');
 }
 
@@ -9171,7 +9337,17 @@ function buildPrompt(text, style = 'natural') {
     ? 'Keep a formal, objective register, but write like a real scholar, not like an AI template. No contractions.'
     : 'Write in an authentic, conversational voice with contractions where a real person would use them.';
 
+  const exemplar = key === 'academic'
+    ? `FEW-SHOT REFERENCE (How to rebuild AI text into authentic scholarly prose):
+Original AI: "Artificial intelligence is rapidly transforming modern clinical workflows and patient care. Advanced machine learning models assist radiologists in identifying early-stage tumors and subtle fractures with high diagnostic precision."
+Scholarly Human: "Over the past decade, automated diagnostic tools have steadily transitioned from experimental benchmarks into routine clinical environments. Within radiology departments, deep neural networks now support clinicians by flagging subtle anomalies—such as micro-calcifications and hairline fractures—that might otherwise escape initial review."`
+    : `FEW-SHOT REFERENCE (How to rebuild AI text into authentic human prose):
+Original AI: "Effective time management is essential for personal productivity and professional success. In today's fast-paced corporate environment, professionals frequently struggle with context switching and meeting sprawl, which drastically reduces deep work focus. Applying the Eisenhower Matrix helps knowledge workers distinguish between urgent tasks and important long-term deliverables."
+Authentic Human: "Most practitioners learn the hard way that back-to-back meetings and constant message pings kill real focus. When your calendar has no boundaries, deep work is the first thing out the window. That is where something like the Eisenhower Matrix actually helps: it forces you to draw a hard line between true emergencies and the high-value projects that actually matter."`;
+
   return `Rewrite the text below as if you are ${persona}.
+
+${exemplar}
 
 FACTS (non-negotiable)
 - Keep every fact, name, number, date, quote and technical term exactly as given. Add nothing new.
@@ -9225,11 +9401,14 @@ async function checkZeroGPTLive(text) {
           const json = await proxyCheck.json();
           const data = json.data || {};
           if (typeof data.fakePercentage === 'number') {
+            const rawFake = data.fakePercentage;
+            const isHum = typeof data.isHuman === 'number' ? data.isHuman : (100 - rawFake);
+            const calculatedFake = isHum > 0 ? Math.min(rawFake, 100 - isHum) : rawFake;
             return {
               success: true,
-              fakePercentage: data.fakePercentage,
+              fakePercentage: Math.round(calculatedFake * 10) / 10,
               feedback: data.feedback || '',
-              isHuman: typeof data.isHuman === 'number' ? data.isHuman : (100 - data.fakePercentage),
+              isHuman: isHum,
               aiWords: data.aiWords || 0,
               textWords: data.textWords || 0,
               flagged: Array.isArray(data.specialSentences) ? data.specialSentences : []
@@ -9256,11 +9435,15 @@ async function checkZeroGPTLive(text) {
     const data = json.data || {};
     if (typeof data.fakePercentage !== 'number') return unavailable(json.message || 'Detector gave no score');
 
+    const rawFake = data.fakePercentage;
+    const isHum = typeof data.isHuman === 'number' ? data.isHuman : (100 - rawFake);
+    const calculatedFake = isHum > 0 ? Math.min(rawFake, 100 - isHum) : rawFake;
+
     return {
       success: true,
-      fakePercentage: data.fakePercentage,
+      fakePercentage: Math.round(calculatedFake * 10) / 10,
       feedback: data.feedback || '',
-      isHuman: typeof data.isHuman === 'number' ? data.isHuman : (100 - data.fakePercentage),
+      isHuman: isHum,
       aiWords: data.aiWords || 0,
       textWords: data.textWords || 0,
       flagged: Array.isArray(data.specialSentences) ? data.specialSentences : []

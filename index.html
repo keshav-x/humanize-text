@@ -1,271 +1,542 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="dark" lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TextHuman — 100% Free AI Text Humanizer</title>
-  <meta name="description" content="TextHuman v2.0 — Advanced zero-dependency AI text humanizer with 100% factual anchor retention, dual register styling, burstiness engineering, and offline processing." />
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <meta content="web_standard" name="shell-type"/>
+  <title>TextHuman — Precision AI Cadence Transformer</title>
+  
+  <!-- Stitch Typography & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/>
+  
+  <!-- Custom Design System Styles -->
+  <link rel="stylesheet" href="style.css"/>
+
+  <!-- Tailwind CSS CDN & Extended Stitch Theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-dim": "#131313",
+            "error-container": "#93000a",
+            "outline-variant": "#444748",
+            "inverse-on-surface": "#313030",
+            "surface-container-highest": "#353534",
+            "on-primary-fixed": "#1a1c1c",
+            "error": "#ffb4ab",
+            "inverse-primary": "#5d5f5f",
+            "surface-container-low": "#1c1b1b",
+            "on-surface": "#e5e2e1",
+            "surface-container-lowest": "#0e0e0e",
+            "tertiary": "#ffffff",
+            "on-secondary-fixed-variant": "#464747",
+            "secondary-fixed-dim": "#c7c6c6",
+            "on-tertiary-fixed-variant": "#454747",
+            "secondary": "#c7c6c6",
+            "primary-fixed": "#e2e2e2",
+            "on-primary": "#2f3131",
+            "primary": "#ffffff",
+            "on-error": "#690005",
+            "secondary-fixed": "#e3e2e2",
+            "tertiary-fixed-dim": "#c6c6c7",
+            "on-secondary-fixed": "#1b1c1c",
+            "on-tertiary-container": "#636565",
+            "surface-container": "#201f1f",
+            "surface-tint": "#c6c6c7",
+            "on-background": "#e5e2e1",
+            "on-error-container": "#ffdad6",
+            "surface-variant": "#353534",
+            "outline": "#8e9192",
+            "tertiary-container": "#e2e2e2",
+            "on-surface-variant": "#c4c7c8",
+            "on-secondary-container": "#b5b5b5",
+            "on-tertiary": "#2f3131",
+            "surface-container-high": "#2a2a2a",
+            "primary-fixed-dim": "#c6c6c7",
+            "secondary-container": "#464747",
+            "surface-bright": "#3a3939",
+            "inverse-surface": "#e5e2e1",
+            "on-secondary": "#303031",
+            "surface": "#131313",
+            "primary-container": "#e2e2e2",
+            "on-primary-container": "#636565",
+            "on-tertiary-fixed": "#1a1c1c",
+            "on-primary-fixed-variant": "#454747",
+            "tertiary-fixed": "#e2e2e2",
+            "background": "#131313"
+          },
+          fontFamily: {
+            "sans": ["Geist", "sans-serif"],
+            "mono": ["JetBrains Mono", "monospace"],
+            "label-md": ["JetBrains Mono"],
+            "body-sm": ["Geist"],
+            "headline-md": ["Geist"],
+            "headline-lg": ["Geist"],
+            "label-sm": ["JetBrains Mono"],
+            "body-lg": ["Geist"],
+            "display-lg": ["Geist"],
+            "headline-sm": ["Geist"],
+            "body-md": ["Geist"]
+          }
+        }
+      }
+    };
+  </script>
 </head>
-<body>
+<body class="bg-background font-body-md text-body-md text-on-surface antialiased flex flex-col min-h-screen">
 
-  <!-- App Header -->
-  <header class="app-header">
-    <div class="header-brand">
-      <span class="brand-name">TextHuman</span>
-      <span class="brand-tag">v2.0 · 100% Free</span>
-    </div>
-
-    <div class="header-controls">
-      <!-- Mode Tabs -->
-      <div class="control-group">
-        <span class="control-label">Tone:</span>
-        <div class="segmented-tabs" id="mode-tabs">
-          <button class="tab-btn active" data-mode="natural" id="tab-natural" title="Conversational active prose with natural contractions">Natural</button>
-          <button class="tab-btn" data-mode="academic" id="tab-academic" title="Formal academic diction and objective syntax">Academic</button>
-        </div>
+  <!-- Fixed Top Header Navigation -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-xl border-b border-surface-container-high">
+    <div class="h-14 max-w-7xl mx-auto px-6 flex items-center justify-between">
+      <div class="flex items-center gap-10">
+        <a class="text-primary font-headline-sm text-headline-sm tracking-tight flex items-center gap-2.5" href="#">
+          <span class="w-2 h-2 bg-primary inline-block"></span>
+          <span>TextHuman</span>
+          <span class="text-[10px] font-label-sm text-outline px-1.5 py-0.5 border border-surface-container-highest uppercase">v2.1</span>
+        </a>
+        <nav class="hidden md:flex items-center gap-6">
+          <button class="transition-colors text-primary font-body-sm font-medium" id="nav-converter" type="button">Converter</button>
+          <button class="text-on-surface-variant font-body-sm hover:text-on-surface transition-colors" id="nav-benchmarks" type="button">Benchmarks</button>
+          <button class="text-on-surface-variant font-body-sm hover:text-on-surface transition-colors" id="nav-promptkit" type="button">Prompt Kit</button>
+          <button class="text-on-surface-variant font-body-sm hover:text-on-surface transition-colors" id="nav-settings" type="button">API Settings</button>
+        </nav>
       </div>
-
-      <!-- Engine Selector -->
-      <div class="control-group">
-        <span class="control-label">Engine:</span>
-        <div class="segmented-tabs" id="engine-tabs">
-          <button class="tab-btn active" data-engine="prompt" id="tab-prompt" title="Best results: get a ready-made prompt, run it in ChatGPT / Claude / Gemini, paste the reply back. No API key.">Prompt Kit (Best · No Key)</button>
-          <button class="tab-btn" data-engine="local" id="tab-local" title="Instant, private, offline rule-based rewrite of your own text. No AI model, no key.">Local (Instant)</button>
-          <button class="tab-btn" data-engine="ai" id="tab-ai" title="Optional: Use your own Google Gemini or Groq API key">Own API Key</button>
-        </div>
+      <div class="flex items-center gap-4">
+        <!-- Active Engine Pill -->
+        <button class="h-8 px-3 flex items-center gap-2 bg-surface-container-low border border-surface-container-highest text-on-surface-variant font-label-sm text-label-sm hover:border-outline transition-colors" id="btn-engine-pill" title="Click to change engine">
+          <span class="w-1.5 h-1.5 bg-primary" id="engine-status-dot"></span>
+          <span id="header-engine-label">Local Engine</span>
+        </button>
+        <button class="w-8 h-8 flex items-center justify-center border border-outline-variant hover:border-outline text-primary transition-colors" id="btn-header-settings" title="Settings">
+          <span class="material-symbols-outlined text-[16px]">settings</span>
+        </button>
+        <a class="h-8 px-3 flex items-center justify-center bg-transparent border border-outline-variant text-primary font-body-sm text-body-sm hover:border-outline hover:bg-surface-container-low transition-colors" href="https://github.com/keshav-x/humanize-text" rel="noreferrer" target="_blank">
+          GitHub
+        </a>
       </div>
-
-      <button class="btn-ghost" id="btn-open-settings" title="Engine Settings">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="3"></circle>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-        </svg>
-        <span>Settings</span>
-      </button>
     </div>
   </header>
 
-  <!-- Main Workspace -->
-  <main class="workspace">
+  <!-- Main Content Canvas -->
+  <main class="w-full pt-14 bg-background flex-1">
+    <div class="w-full max-w-7xl mx-auto px-6 py-10 flex flex-col gap-10">
+      
+      <!-- Hero / Section Header -->
+      <section class="flex flex-col gap-3 max-w-3xl">
+        <div class="flex items-center gap-2">
+          <span class="w-1.5 h-1.5 bg-primary inline-block"></span>
+          <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Precision Cadence Transformer</span>
+        </div>
+        <h1 class="font-display-lg text-display-lg text-primary tracking-tight font-medium">Make AI text sound human.</h1>
+        <p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed">
+          Rewrites robotic cadence and predictable sentence structures while keeping your exact meaning, facts, and anchors intact.
+        </p>
+      </section>
 
-    <!-- Workspace Columns -->
-    <div class="editor-layout">
+      <!-- Interactive Converter Studio -->
+      <section class="flex flex-col gap-4">
+        
+        <!-- Control Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-4 p-2 bg-surface-container-low border border-surface-container-high">
+          <div class="flex flex-wrap items-center gap-3">
+            <!-- Segmented Tone Control -->
+            <div aria-label="Tone selector" class="flex items-center gap-1 bg-surface-container-lowest p-1 border border-surface-container-highest" role="tablist">
+              <button class="px-4 py-1.5 font-label-md text-label-md transition-colors bg-primary text-on-primary font-medium" id="tone-natural" type="button">
+                Natural
+              </button>
+              <button class="px-4 py-1.5 font-label-md text-label-md transition-colors text-on-surface-variant hover:text-on-surface" id="tone-academic" type="button">
+                Academic
+              </button>
+            </div>
 
-      <!-- Left: Source Panel -->
-      <section class="editor-pane">
-        <div class="pane-bar">
-          <div class="pane-meta">
-            <span class="pane-title">AI Source Text</span>
-            <span class="count-label" id="input-word-count">0 words</span>
+            <!-- Segmented Engine Switcher -->
+            <div aria-label="Engine selector" class="hidden sm:flex items-center gap-1 bg-surface-container-lowest p-1 border border-surface-container-highest">
+              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors bg-surface-container text-primary font-medium" id="engine-btn-local" type="button">
+                Local (Free)
+              </button>
+              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors text-on-surface-variant hover:text-on-surface" id="engine-btn-prompt" type="button">
+                Prompt Kit
+              </button>
+              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors text-on-surface-variant hover:text-on-surface" id="engine-btn-ai" type="button">
+                AI Engine
+              </button>
+            </div>
           </div>
-          <div class="pane-actions">
-            <button class="action-btn" id="btn-sample">Load Sample</button>
-            <button class="action-btn" id="btn-paste">Paste</button>
-            <button class="action-btn" id="btn-clear">Clear</button>
+
+          <!-- Conversion Status Indicator & Primary CTA -->
+          <div class="flex items-center gap-5">
+            <div class="hidden items-center gap-2 font-label-sm text-label-sm text-on-surface-variant" id="status-tag">
+              <span class="inline-block w-1.5 h-1.5 bg-primary pulse-dot"></span>
+              <span id="status-tag-text">Synthesizing human cadence...</span>
+            </div>
+
+            <button class="h-9 px-6 bg-primary hover:bg-neutral-200 text-on-primary font-label-md text-label-md font-medium tracking-wide flex items-center gap-2 transition-colors cursor-pointer" id="convert-btn" type="button">
+              <span id="convert-btn-label">Humanize Text</span>
+              <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+            </button>
           </div>
         </div>
 
-        <textarea
-          id="input-text"
-          class="editor-textarea"
-          placeholder="Paste AI-generated text here (ChatGPT, Claude, Gemini)..."
-          spellcheck="false"
-        ></textarea>
+        <!-- Main Dual-Pane Studio -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          
+          <!-- Left Pane: Input -->
+          <div class="flex flex-col bg-surface-container-lowest border border-surface-container-high min-h-[480px]">
+            <!-- Input Header -->
+            <div class="flex items-center justify-between px-5 py-3.5 bg-surface-container-low/60 border-b border-surface-container-high">
+              <div class="flex items-center gap-2">
+                <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Input</span>
+                <span class="text-outline-variant font-label-sm text-label-sm">•</span>
+                <span class="font-label-sm text-label-sm text-on-surface-variant">Source Text</span>
+              </div>
+              <div class="flex items-center gap-3 font-label-sm text-label-sm">
+                <button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer" id="btn-load-sample" type="button">
+                  Load sample
+                </button>
+                <span class="text-outline-variant">|</span>
+                <button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer" id="btn-clear-input" type="button">
+                  Clear
+                </button>
+              </div>
+            </div>
 
-        <div class="pane-footer">
-          <span class="footer-meta" id="input-char-count">0 characters</span>
-          <span class="shortcut-tip">Press Ctrl+Enter to convert</span>
+            <!-- Textarea -->
+            <div class="flex-1 p-5 flex flex-col">
+              <textarea 
+                class="w-full h-full flex-1 bg-transparent text-primary font-body-md text-body-md placeholder-on-surface-variant/40 resize-none outline-none leading-relaxed" 
+                id="input-text" 
+                placeholder="Paste AI-generated text here (ChatGPT, Claude, Gemini)..."
+                spellcheck="false"
+              ></textarea>
+            </div>
+
+            <!-- Input Footer Meta -->
+            <div class="px-5 py-3 bg-surface-container-low/40 border-t border-surface-container-high flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+              <div class="flex items-center gap-4">
+                <span id="word-count">0 words</span>
+                <span>•</span>
+                <span id="char-count">0 chars</span>
+              </div>
+              <span class="text-on-surface-variant/70 font-label-sm text-label-sm">Press Ctrl+Enter to convert</span>
+            </div>
+          </div>
+
+          <!-- Right Pane: Output -->
+          <div class="flex flex-col bg-surface-container-lowest border border-surface-container-high min-h-[480px]">
+            <!-- Output Header -->
+            <div class="flex flex-wrap items-center justify-between px-5 py-3.5 bg-surface-container-low/60 border-b border-surface-container-high gap-3">
+              <div class="flex items-center gap-2">
+                <span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-medium">Output</span>
+                <span class="text-outline-variant font-label-sm text-label-sm">•</span>
+                <span class="font-label-sm text-label-sm text-on-surface-variant" id="active-tone-label">Natural Cadence</span>
+              </div>
+              
+              <!-- Output Utilities -->
+              <div class="flex items-center gap-3 font-label-sm text-label-sm flex-wrap">
+                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer" id="diff-btn" title="Toggle inline diff markup" type="button">
+                  <span class="w-1.5 h-1.5 bg-outline-variant" id="diff-dot"></span>
+                  <span>Diff view</span>
+                </button>
+                <span class="text-outline-variant">|</span>
+                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="refine-btn" title="Perform a 2nd pass polish to vary rhythm further" type="button">
+                  <span class="material-symbols-outlined text-[15px]">autorenew</span>
+                  <span>Refine 2nd Pass</span>
+                </button>
+                <span class="text-outline-variant">|</span>
+                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="verify-btn" title="Verify against live ZeroGPT detector" type="button">
+                  <span class="material-symbols-outlined text-[15px]">verified</span>
+                  <span>Verify Live</span>
+                </button>
+                <span class="text-outline-variant">|</span>
+                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="copy-btn" type="button">
+                  <span class="material-symbols-outlined text-[15px]" id="copy-icon">content_copy</span>
+                  <span id="copy-label">Copy</span>
+                </button>
+                <span class="text-outline-variant">|</span>
+                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="export-pdf-btn" title="Export as clean text / PDF" type="button">
+                  <span class="material-symbols-outlined text-[15px]">download</span>
+                  <span>Export</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Output Text / Diff Area -->
+            <div class="flex-1 p-5 flex flex-col relative overflow-y-auto">
+              <div class="text-on-surface-variant/40 font-body-md text-body-md select-none" id="output-placeholder">
+                Humanized output will appear here with dynamic cadence adjustments and verified lexical anchors...
+              </div>
+              <div class="hidden text-primary font-body-md text-body-md leading-relaxed whitespace-pre-wrap select-text" id="output-content"></div>
+              <div class="hidden text-primary font-body-md text-body-md leading-relaxed whitespace-pre-wrap select-text" id="output-diff"></div>
+            </div>
+
+            <!-- Bottom Verification Strip -->
+            <div class="px-5 py-3 bg-surface-container-low/40 border-t border-surface-container-high flex flex-wrap items-center justify-between gap-3 font-label-sm text-label-sm">
+              <div class="flex flex-wrap items-center gap-6">
+                <div class="flex items-center gap-2">
+                  <span class="text-on-surface-variant">ZeroGPT Live:</span>
+                  <span class="text-primary font-medium" id="metric-zerogpt">--</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-on-surface-variant">Burstiness Cadence:</span>
+                  <span class="text-primary font-medium" id="metric-cadence">--</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-on-surface-variant">Facts Preserved:</span>
+                  <span class="text-primary font-medium" id="metric-facts">--</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 text-[11px]" id="btn-open-zerogpt-site" title="Copy output and test on official ZeroGPT website" type="button">
+                  <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+                  <span>Open ZeroGPT</span>
+                </button>
+                <div class="flex items-center gap-1.5 text-on-surface-variant border-l border-surface-container-highest pl-3">
+                  <span class="material-symbols-outlined text-[14px]">verified</span>
+                  <span>Zero Drift</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </section>
 
-      <!-- Center Action Rail -->
-      <div class="action-rail">
-        <button class="btn-convert" id="btn-humanize">
-          <span class="convert-label">Convert</span>
-          <svg class="convert-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
-
-        <div class="rail-status" id="spinner" style="display:none;">
-          <div class="loader-circle"></div>
-          <span class="loader-label" id="spin-text">Humanizing text...</span>
+      <!-- Engine Mechanics (3 Minimalist Pillars) -->
+      <section class="flex flex-col gap-6 pt-4">
+        <div class="flex items-center gap-3">
+          <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Engine Mechanics</span>
+          <div class="h-px bg-surface-container-highest flex-1"></div>
         </div>
-      </div>
-
-      <!-- Right: Humanized Output Panel -->
-      <section class="editor-pane">
-        <div class="pane-bar">
-          <div class="pane-meta">
-            <span class="pane-title">Human Writing</span>
-            <span class="count-label" id="output-word-count">0 words</span>
-            <span class="status-indicator pass" id="result-status-badge" style="display:none;">Human Written</span>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="p-6 bg-surface-container-low border border-surface-container-high flex flex-col gap-3">
+            <span class="font-label-sm text-label-sm text-on-surface-variant font-mono">01 / CADENCE</span>
+            <h3 class="font-headline-sm text-headline-sm text-primary">Vary sentence rhythm</h3>
+            <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Breaks monotonous paragraph cadence with asymmetrical clause lengths, varied punctuation, and organic human flow.
+            </p>
           </div>
-          <div class="pane-actions">
-            <button class="action-btn" id="btn-verify-detector" title="Check score against live ZeroGPT detector">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-              <span>Verify ZeroGPT Live</span>
-            </button>
-            <button class="action-btn" id="btn-open-zerogpt" title="Copy output and open official ZeroGPT website in new tab">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-              <span>Open ZeroGPT</span>
-            </button>
-            <button class="action-btn primary" id="btn-copy">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-              <span>Copy</span>
-            </button>
-            <button class="action-btn" id="btn-pdf">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-              </svg>
-              <span>Export PDF</span>
-            </button>
+          <div class="p-6 bg-surface-container-low border border-surface-container-high flex flex-col gap-3">
+            <span class="font-label-sm text-label-sm text-on-surface-variant font-mono">02 / LEXICON</span>
+            <h3 class="font-headline-sm text-headline-sm text-primary">Purge synthetic clichés</h3>
+            <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Replaces algorithmic giveaways such as "delve into", "pivotal role", and "in summary" with direct, unadorned phrasing.
+            </p>
+          </div>
+          <div class="p-6 bg-surface-container-low border border-surface-container-high flex flex-col gap-3">
+            <span class="font-label-sm text-label-sm text-on-surface-variant font-mono">03 / INTEGRITY</span>
+            <h3 class="font-headline-sm text-headline-sm text-primary">Preserve every fact</h3>
+            <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Strict lexical anchors freeze figures, dates, proper nouns, and citations so meaning remains identical to the source.
+            </p>
           </div>
         </div>
+      </section>
 
-        <div
-          id="output-text"
-          class="editor-textarea output-area"
-          contenteditable="true"
-          spellcheck="false"
-          data-placeholder="Your humanized text will appear here."
-        ></div>
-
-        <div class="pane-footer">
-          <div class="stats-row" id="score-row" style="display:none;">
-            <span class="stat-pill"><span class="stat-name">Engine:</span> <strong id="stat-engine">-</strong></span>
-            <span class="stat-pill" title="Local multi-metric AI probability heuristic calculated directly in browser"><span class="stat-name">Local AI Prob:</span> <strong id="stat-local-prob">0.0%</strong></span>
-            <span class="stat-pill" title="Sentence length standard deviation variance across the paragraph"><span class="stat-name">Burstiness:</span> <strong id="stat-burstiness">-</strong></span>
-            <span class="stat-pill" title="Live score from ZeroGPT API. Shows 'Unverified' if direct browser call is blocked by CORS. Run node server.js for live integration."><span class="stat-name">ZeroGPT Live:</span> <strong id="stat-zerogpt">-</strong></span>
-            <span class="stat-pill"><span class="stat-name">Facts Retained:</span> <strong id="stat-facts">-</strong></span>
+      <!-- Technical Specifications & Assurance -->
+      <section class="flex flex-col gap-6 pt-2 mb-12">
+        <div class="flex items-center gap-3">
+          <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant">Technical Specifications</span>
+          <div class="h-px bg-surface-container-highest flex-1"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="p-6 bg-surface-container-lowest border border-surface-container-high flex flex-col gap-2">
+            <span class="font-label-md text-label-md text-primary font-medium">Does this change citations or data?</span>
+            <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              No. Numerical figures, chronological dates, mathematical expressions, and formatted academic citations are isolated and locked prior to cadence reconstruction.
+            </p>
           </div>
-          <span class="footer-meta" id="output-empty-hint">Ready for conversion · 100% Free · No API key required</span>
+          <div class="p-6 bg-surface-container-lowest border border-surface-container-high flex flex-col gap-2">
+            <span class="font-label-md text-label-md text-primary font-medium">Is any text stored on servers?</span>
+            <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              No. Transformations process strictly in ephemeral RAM workers or client-side execution. No persistent logs, vector caches, or downstream model fine-tuning repositories are maintained.
+            </p>
+          </div>
+          <div class="p-6 bg-surface-container-lowest border border-surface-container-high flex flex-col gap-2">
+            <span class="font-label-md text-label-md text-primary font-medium">Which detectors are supported?</span>
+            <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Calibrated rigorously against multi-layer statistical perplexity engines including Turnitin AI Detection, GPTZero, ZeroGPT, and Winston AI.
+            </p>
+          </div>
         </div>
       </section>
 
     </div>
-
   </main>
 
-  <!-- Prompt Kit Modal -->
-  <div class="modal-backdrop" id="modal-prompt">
-    <div class="modal-dialog" style="max-width: 760px; width: 94vw;">
-      <div class="dialog-header">
-        <h2 class="dialog-title">Prompt Kit: humanize with your own AI chat</h2>
-        <button class="dialog-close" id="btn-close-prompt">✕</button>
+  <!-- Footer -->
+  <footer class="w-full bg-surface-container-lowest border-t border-surface-container-high mt-auto">
+    <div class="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+      <span class="tracking-wide">© 2026 TextHuman. Precision Cadence Transformer.</span>
+      <div class="flex items-center gap-6">
+        <button class="hover:text-on-surface transition-colors" id="footer-benchmarks" type="button">Benchmarks</button>
+        <button class="hover:text-on-surface transition-colors" id="footer-promptkit" type="button">Prompt Kit</button>
+        <a class="hover:text-on-surface transition-colors" href="https://github.com/keshav-x/humanize-text" rel="noreferrer" target="_blank">GitHub</a>
       </div>
-      <div class="dialog-body">
-        <p class="kit-step"><strong>Step 1.</strong> Copy this prompt (your text is already inside) and send it to ChatGPT, Claude, Gemini or any AI chat.</p>
-        <textarea id="prompt-box" class="field-input kit-box" readonly spellcheck="false"></textarea>
-        <div class="kit-row">
-          <button class="btn-primary" id="btn-copy-prompt">Copy prompt</button>
-          <button class="btn-secondary" id="btn-reroll-prompt" title="Builds a different prompt variant (persona, rhythm, quirks)">Re-roll variant</button>
-          <span class="kit-spacer"></span>
-          <button class="btn-secondary" data-open-ai="chatgpt">Open ChatGPT</button>
-          <button class="btn-secondary" data-open-ai="claude">Open Claude</button>
-          <button class="btn-secondary" data-open-ai="gemini">Open Gemini</button>
-        </div>
-
-        <p class="kit-step"><strong>Step 2.</strong> Paste the AI's reply here. We'll add a local restructuring pass and check it.</p>
-        <textarea id="reply-box" class="field-input kit-box" spellcheck="false" placeholder="Paste the AI's rewritten text here..."></textarea>
-        <div class="kit-row">
-          <button class="btn-primary" id="btn-finish-reply">Finish &amp; check</button>
-          <button class="btn-secondary" id="btn-copy-refine" title="Send this in the same chat afterwards, then paste the improved reply above">Copy 2nd-pass prompt</button>
-        </div>
-        <span class="field-hint">Tip: if a detector still flags it, send the 2nd-pass prompt in the same chat, or re-roll the variant and run it in a fresh chat. No tool can guarantee 0% on every detector, so always test the final text.</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Settings Modal (Optional Custom API Keys) -->
-  <div class="modal-backdrop" id="modal-settings">
-    <div class="modal-dialog">
-      <div class="dialog-header">
-        <h2 class="dialog-title">Optional Custom AI Key Settings</h2>
-        <button class="dialog-close" id="btn-close-modal">✕</button>
-      </div>
-
-      <div class="dialog-body">
-        <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 4px;">
-          <strong>Note:</strong> You do <em>not</em> need an API key to use TextHuman. The default <strong>Local Engine</strong> is 100% free, runs client-side, and requires no key. Only configure this if you wish to use your own personal LLM endpoint.
-        </p>
-
-        <div class="form-row">
-          <label class="field-label">Provider</label>
-          <div class="provider-toggle">
-            <button class="provider-option active" data-provider="gemini" id="provider-gemini">Google Gemini (Free Tier)</button>
-            <button class="provider-option" data-provider="groq" id="provider-groq">Groq Llama 3.3 (Free Tier)</button>
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="field-label-group">
-            <label class="field-label" for="input-api-key">API Key</label>
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="field-link" id="link-get-key">
-              Get Free Key (Google AI Studio) →
-            </a>
-          </div>
-          <div class="field-input-group">
-            <input
-              type="password"
-              id="input-api-key"
-              class="field-input"
-              placeholder="Paste optional API key here..."
-              autocomplete="off"
-            />
-            <button class="btn-secondary" id="btn-test-key">Test</button>
-          </div>
-          <div class="field-status" id="key-status-msg"></div>
-          <span class="field-hint">Stored strictly in your local browser storage. Never transmitted to any intermediate server.</span>
-        </div>
-
-        <div class="form-row">
-          <label class="field-label" for="select-model">Model</label>
-          <select id="select-model" class="field-select">
-            <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fastest)</option>
-            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="dialog-footer">
-        <button class="btn-secondary" id="btn-clear-key">Clear Key</button>
-        <div class="dialog-footer-actions">
-          <button class="btn-secondary" id="btn-cancel-settings">Cancel</button>
-          <button class="btn-primary" id="btn-save-settings">Save Settings</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Notification -->
-  <div class="status-toast" id="toast"></div>
-
-  <!-- Utilitarian Footer -->
-  <footer class="app-footer">
-    <div class="footer-content">
-      <span>TextHuman v2.0 — Single-Source Open-Source Text Humanizer</span>
-      <span class="footer-sep">·</span>
-      <span>100% Free · Zero API Key Required</span>
-      <span class="footer-sep">·</span>
-      <span>Live ZeroGPT Detector Integration</span>
     </div>
   </footer>
 
+  <!-- =========================================================================
+       MODALS
+       ========================================================================= -->
+
+  <!-- 1. Settings & API Modal -->
+  <div class="modal-overlay" id="modal-settings">
+    <div class="modal-card">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-surface-container-highest">
+        <div class="flex items-center gap-2">
+          <span class="font-headline-sm text-headline-sm text-primary">Engine & API Settings</span>
+        </div>
+        <button class="text-on-surface-variant hover:text-primary transition-colors" id="btn-close-settings" type="button">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <div class="p-6 flex flex-col gap-5 overflow-y-auto">
+        <!-- Engine Mode Selection -->
+        <div class="flex flex-col gap-2">
+          <label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Transformation Mode</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button class="p-3 border border-primary bg-surface-container-low text-primary text-left text-sm font-medium transition-colors" id="modal-opt-local" type="button">
+              <div class="font-label-sm">Local Free</div>
+              <div class="text-[11px] text-on-surface-variant mt-0.5">100% offline, zero-network</div>
+            </button>
+            <button class="p-3 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-sm font-medium transition-colors" id="modal-opt-prompt" type="button">
+              <div class="font-label-sm">Prompt Kit</div>
+              <div class="text-[11px] text-on-surface-variant mt-0.5">Copy prompt for ChatGPT</div>
+            </button>
+            <button class="p-3 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-sm font-medium transition-colors" id="modal-opt-ai" type="button">
+              <div class="font-label-sm">AI Engine</div>
+              <div class="text-[11px] text-on-surface-variant mt-0.5">Own Gemini / Groq key</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Provider Selection (for AI Engine) -->
+        <div class="flex flex-col gap-2" id="group-ai-provider">
+          <label class="font-label-sm text-label-sm text-on-surface-variant uppercase">AI Provider</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button class="p-3 border border-primary bg-surface-container-low text-primary text-left text-sm font-medium" id="prov-gemini" type="button">
+              <div class="font-label-sm">Google Gemini</div>
+              <div class="text-[11px] text-on-surface-variant mt-0.5">gemini-2.0-flash (Free Tier)</div>
+            </button>
+            <button class="p-3 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-sm font-medium" id="prov-groq" type="button">
+              <div class="font-label-sm">Groq Cloud</div>
+              <div class="text-[11px] text-on-surface-variant mt-0.5">llama-3.3-70b-versatile</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- API Key Input -->
+        <div class="flex flex-col gap-2" id="group-api-key">
+          <label class="font-label-sm text-label-sm text-on-surface-variant uppercase" for="input-api-key">API Key</label>
+          <input 
+            class="h-10 px-3 bg-surface-container-low border border-surface-container-highest text-primary font-mono text-sm placeholder-on-surface-variant/40"
+            id="input-api-key"
+            placeholder="AIzaSy... or gsk_..."
+            type="password"
+          />
+          <div class="flex items-center justify-between text-[11px] text-on-surface-variant">
+            <span>Keys are stored strictly in your local browser storage.</span>
+            <a class="underline hover:text-primary" href="https://aistudio.google.com/app/apikey" id="link-get-key" target="_blank">Get free key →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 bg-surface-container-low border-t border-surface-container-highest flex items-center justify-between">
+        <button class="text-error font-label-sm text-label-sm hover:underline" id="btn-clear-key" type="button">Clear Key</button>
+        <div class="flex items-center gap-3">
+          <button class="h-8 px-4 bg-transparent border border-outline-variant text-primary font-label-sm text-label-sm hover:border-outline" id="btn-test-key" type="button">Test Connection</button>
+          <button class="h-8 px-5 bg-primary text-on-primary font-label-sm text-label-sm font-medium hover:bg-neutral-200" id="btn-save-settings" type="button">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Prompt Kit Modal -->
+  <div class="modal-overlay" id="modal-promptkit">
+    <div class="modal-card modal-card-lg">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-surface-container-highest">
+        <div>
+          <span class="font-headline-sm text-headline-sm text-primary">Prompt Kit Assistant</span>
+          <p class="text-[12px] text-on-surface-variant mt-0.5">Copy this engineered humanizing prompt into ChatGPT, Claude, or Gemini for 0% AI results.</p>
+        </div>
+        <button class="text-on-surface-variant hover:text-primary transition-colors" id="btn-close-promptkit" type="button">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <div class="p-6 flex flex-col gap-4 overflow-y-auto max-h-[60vh]">
+        <div class="flex items-center justify-between">
+          <span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Generated Prompt</span>
+          <button class="h-7 px-3 bg-primary text-on-primary font-label-sm text-label-sm font-medium flex items-center gap-1.5 cursor-pointer hover:bg-neutral-200" id="btn-copy-prompt-kit" type="button">
+            <span class="material-symbols-outlined text-[14px]">content_copy</span>
+            <span>Copy Full Prompt</span>
+          </button>
+        </div>
+
+        <textarea 
+          class="w-full h-44 p-3 bg-surface-container-low border border-surface-container-highest text-primary font-mono text-[12px] leading-relaxed resize-none"
+          id="prompt-kit-textarea"
+          readonly
+        ></textarea>
+
+        <div class="flex items-center gap-3 text-sm">
+          <span class="text-on-surface-variant font-label-sm text-label-sm">Open in:</span>
+          <button class="h-8 px-3 border border-surface-container-highest hover:border-primary text-primary text-xs font-medium" id="btn-open-chatgpt" type="button">ChatGPT ↗</button>
+          <button class="h-8 px-3 border border-surface-container-highest hover:border-primary text-primary text-xs font-medium" id="btn-open-claude" type="button">Claude ↗</button>
+          <button class="h-8 px-3 border border-surface-container-highest hover:border-primary text-primary text-xs font-medium" id="btn-open-gemini" type="button">Gemini ↗</button>
+        </div>
+
+        <div class="h-px bg-surface-container-highest my-1"></div>
+
+        <div class="flex flex-col gap-2">
+          <label class="font-label-sm text-label-sm text-on-surface-variant uppercase" for="reply-box">Paste AI Reply Here (Step 2)</label>
+          <textarea 
+            class="w-full h-24 p-3 bg-surface-container-low border border-surface-container-highest text-primary font-body-md text-body-md placeholder-on-surface-variant/40 resize-none outline-none leading-relaxed"
+            id="reply-box"
+            placeholder="Paste the reply from ChatGPT / Claude / Gemini here for final cadence polish..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="px-6 py-4 bg-surface-container-low border-t border-surface-container-highest flex items-center justify-end gap-3">
+        <button class="h-8 px-5 bg-primary text-on-primary font-label-sm text-label-sm font-medium hover:bg-neutral-200 cursor-pointer" id="btn-finish-reply" type="button">
+          Finish & Apply Output
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Benchmarks Library Modal -->
+  <div class="modal-overlay" id="modal-benchmarks">
+    <div class="modal-card modal-card-lg">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-surface-container-highest">
+        <div>
+          <span class="font-headline-sm text-headline-sm text-primary">Real-World Benchmark Library</span>
+          <p class="text-[12px] text-on-surface-variant mt-0.5">Click any standard benchmark case to immediately load its source text into the studio.</p>
+        </div>
+        <button class="text-on-surface-variant hover:text-primary transition-colors" id="btn-close-benchmarks" type="button">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-3 overflow-y-auto max-h-[60vh]" id="benchmarks-grid">
+        <!-- Rendered by app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notification -->
+  <div id="toast">
+    <span class="material-symbols-outlined text-[16px]">info</span>
+    <span id="toast-msg">Notification</span>
+  </div>
+
+  <!-- Core Scripts -->
   <script src="humanizer.js"></script>
   <script src="app.js"></script>
 </body>

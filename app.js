@@ -1,740 +1,828 @@
 /**
  * app.js
- * Utilitarian Controller for TextHuman v2.0
- * 
- * Features:
- * - 100% Free default engine (runs locally in browser with ZERO API keys required)
- * - Multi-stage deterministic linguistic transformation pipeline
- * - Real-time Live ZeroGPT Detection API integration
- * - Content Anchor audit confirming 100% fact, date, and name retention
- * - Dual tone styling: Natural conversational vs Academic formal
- * - Optional custom API key support (Google Gemini / Groq) for power users
- * - Instant Copy and PDF Export
+ * TextHuman — Precision Cadence Transformer & Bypass Platform
+ * Complete controller wiring for Stitch Pitch Editorial design.
  */
 
-(function () {
+(() => {
   'use strict';
 
-  // ── Sample inputs (plain AI-style text to try the tool with) ──
-  const SAMPLES = [
+  // ── Storage Keys ────────────────────────────────────────────────────────────
+  const STORAGE_KEY_API_KEY = 'texthuman_api_key';
+  const STORAGE_KEY_PROVIDER = 'texthuman_provider';
+  const STORAGE_KEY_MODEL = 'texthuman_model';
+  const STORAGE_KEY_ENGINE = 'texthuman_engine';
+  const STORAGE_KEY_STYLE = 'texthuman_style';
+
+  // ── Benchmark Test Cases ───────────────────────────────────────────────────
+  const BENCHMARKS = [
     {
-      name: 'Effective Time Management',
-      text: `Effective time management is essential for personal productivity and professional success. In today's fast-paced corporate environment, professionals frequently struggle with context switching and meeting sprawl, which drastically reduces deep work focus. Applying the Eisenhower Matrix helps knowledge workers distinguish between urgent tasks and important long-term deliverables. By establishing clear calendar defense mechanisms, individuals can prevent mental fatigue and maintain high output without burning out.`
+      id: 'time-mgmt',
+      topic: 'Time Management',
+      tag: 'Workplace Productivity',
+      raw_ai: "Effective time management is essential for personal productivity and professional success. In today's fast-paced corporate environment, professionals frequently struggle with context switching and meeting sprawl, which drastically reduces deep work focus. Applying the Eisenhower Matrix helps knowledge workers distinguish between urgent tasks and important long-term deliverables. By establishing clear calendar defense mechanisms, individuals can prevent mental fatigue and maintain high output without burning out.",
+      anchors: ["Eisenhower Matrix", "productivity"]
     },
     {
-      name: 'Python Programming Language',
-      text: `Python is an interpreted, high-level, general-purpose programming language. Its design philosophy emphasizes code readability with the use of significant indentation. Python's language constructs and object-oriented approach aim to help programmers write clear, logical code for small and large-scale projects. Python is dynamically-typed and garbage-collected. It supports multiple programming paradigms, including structured, object-oriented and functional programming. It is widely used in data science, machine learning, and web development.`
+      id: 'python-code',
+      topic: 'Python Programming',
+      tag: 'Software Engineering',
+      raw_ai: "Python is an interpreted, high-level, general-purpose programming language. Its design philosophy emphasizes code readability with the use of significant indentation. Python's language constructs and object-oriented approach aim to help programmers write clear, logical code for small and large-scale projects. Python is dynamically-typed and garbage-collected. It supports multiple programming paradigms, including structured, object-oriented and functional programming. It is widely used in data science, machine learning, and web development.",
+      anchors: ["Python", "data science", "machine learning"]
     },
     {
-      name: 'India Election (SIR)',
-      text: `Recent protests in India have focused on the Election Commission's Special Intensive Revision (SIR) of electoral rolls, particularly concerns about the possible exclusion of eligible voters from voter lists. In October 2026, protests were held in cities including Delhi and Mumbai, with opposition parties, student groups and civil-society activists demanding greater transparency in the revision process and, in some cases, calling for the resignation of Chief Election Commissioner Gyanesh Kumar. Protesters argue that documentation requirements and changes to voter lists could disenfranchise legitimate voters, while the Election Commission maintains that SIR is intended to remove duplicate, deceased and otherwise ineligible entries and protect the accuracy of electoral rolls. The protests have also led to clashes and detentions in Delhi, making SIR an important ongoing debate about voter rights, electoral openness and the health of India's democratic institutions.`
+      id: 'election-sir',
+      topic: 'India Election SIR',
+      tag: 'Civic Governance',
+      raw_ai: "Recent protests in India have focused on the Election Commission's Special Intensive Revision (SIR) of electoral rolls, particularly concerns about the possible exclusion of eligible voters from voter lists. In October 2026, protests were held in cities including Delhi and Mumbai, with opposition parties, student groups and civil-society activists demanding greater transparency in the revision process and, in some cases, calling for the resignation of Chief Election Commissioner Gyanesh Kumar. Protesters argue that documentation requirements and changes to voter lists could disenfranchise legitimate voters, while the Election Commission maintains that SIR is intended to remove duplicate, deceased and otherwise ineligible entries and protect the accuracy of electoral rolls.",
+      anchors: ["Election Commission", "Special Intensive Revision", "Gyanesh Kumar"]
     },
     {
-      name: 'Renewable Energy & Climate',
-      text: `The global transition toward renewable energy represents a critical milestone in combating climate change. Solar photovoltaic arrays and modern wind turbines now generate electricity at costs substantially lower than traditional fossil fuel power plants. Nevertheless, managing generation intermittency demands significant infrastructure investments in high-capacity battery storage and smart grid balancing solutions. Coordinated energy policies are essential to maintain stable grid frequency during peak consumption hours.`
+      id: 'renewable-energy',
+      topic: 'Renewable Energy',
+      tag: 'Energy & Climate',
+      raw_ai: "The global transition toward renewable energy represents a critical milestone in combating climate change. Solar photovoltaic arrays and modern wind turbines now generate electricity at costs substantially lower than traditional fossil fuel power plants. Nevertheless, managing generation intermittency demands significant infrastructure investments in high-capacity battery storage and smart grid balancing solutions. Coordinated energy policies are essential to maintain stable grid frequency during peak consumption hours.",
+      anchors: ["Solar", "wind", "battery storage"]
     },
     {
-      name: 'Remote Work & Modern Teams',
-      text: `Remote work arrangements have fundamentally altered traditional corporate operations across knowledge industries. By eliminating lengthy daily commutes, distributed employees report higher schedule flexibility and improved work-life balance. However, organizations frequently encounter significant coordination friction, particularly regarding cross-time-zone synchronization and informal collaboration. Successful organizations adopt intentional communication protocols and hybrid scheduling models to preserve cohesive team culture.`
+      id: 'remote-work',
+      topic: 'Remote Work Dynamics',
+      tag: 'Corporate Culture',
+      raw_ai: "Remote work arrangements have fundamentally altered traditional corporate operations across knowledge industries. By eliminating lengthy daily commutes, distributed employees report higher schedule flexibility and improved work-life balance. However, organizations frequently encounter significant coordination friction, particularly regarding cross-time-zone synchronization and informal collaboration. Successful organizations adopt intentional communication protocols and hybrid scheduling models to preserve cohesive team culture.",
+      anchors: ["work-life balance", "remote work"]
     },
     {
-      name: 'Healthcare & Clinical AI',
-      text: `Artificial intelligence is rapidly transforming modern clinical workflows and patient care. Advanced machine learning models assist radiologists in identifying early-stage tumors and subtle fractures with high diagnostic precision. Furthermore, predictive analytics allow healthcare institutions to anticipate patient readmission risks and allocate critical medical resources efficiently. However, integrating automated decision-support systems requires careful clinician oversight to ensure ethical compliance and patient safety.`
+      id: 'health-ai',
+      topic: 'Clinical Healthcare AI',
+      tag: 'Medical Diagnostics',
+      raw_ai: "Artificial intelligence is rapidly transforming modern clinical workflows and patient care. Advanced machine learning models assist radiologists in identifying early-stage tumors and subtle fractures with high diagnostic precision. Furthermore, predictive analytics allow healthcare institutions to anticipate patient readmission risks and allocate critical medical resources efficiently. However, integrating automated decision-support systems requires careful clinician oversight to ensure ethical compliance and patient safety.",
+      anchors: ["radiologists", "tumors", "fractures"]
     },
     {
-      name: 'Cybersecurity & Zero Trust',
-      text: `Modern cybersecurity defense requires a proactive strategy to mitigate sophisticated adversarial threats across enterprise networks. Traditional perimeter security models are increasingly insufficient against credential theft, ransomware, and insider vulnerabilities. Consequently, organizations are adopting Zero Trust architectures that enforce continuous multi-factor authentication and strict least-privilege access controls. Regular employee awareness training remains vital to prevent social engineering attacks and phishing breaches.`
+      id: 'cybersecurity',
+      topic: 'Cybersecurity Zero Trust',
+      tag: 'Information Security',
+      raw_ai: "Modern cybersecurity defense requires a proactive strategy to mitigate sophisticated adversarial threats across enterprise networks. Traditional perimeter security models are increasingly insufficient against credential theft, ransomware, and insider vulnerabilities. Consequently, organizations are adopting Zero Trust architectures that enforce continuous multi-factor authentication and strict least-privilege access controls. Regular employee awareness training remains vital to prevent social engineering attacks and phishing breaches.",
+      anchors: ["Zero Trust", "multi-factor", "ransomware"]
     },
     {
-      name: 'Blockchain & Decentralized Ledgers',
-      text: `Blockchain is a distributed ledger technology that records transactions across a decentralized network of computers in a verifiable and tamper-resistant manner. Instead of depending on a central authority like a bank or clearinghouse, consensus algorithms validate transfers and synchronize state across all network nodes. Cryptographic hashes chain each block of data to its predecessor, preventing retroactive alteration without network-wide consensus. While scalability and transaction costs remain active engineering challenges, decentralized networks provide clear audit trails for digital assets.`
+      id: 'blockchain',
+      topic: 'Blockchain Ledgers',
+      tag: 'Decentralized Systems',
+      raw_ai: "Blockchain is a distributed ledger technology that records transactions across a decentralized network of computers in a verifiable and tamper-resistant manner. Instead of depending on a central authority like a bank or clearinghouse, consensus algorithms validate transfers and synchronize state across all network nodes. Cryptographic hashes chain each block of data to its predecessor, preventing retroactive alteration without network-wide consensus. While scalability and transaction costs remain active engineering challenges, decentralized networks provide clear audit trails for digital assets.",
+      anchors: ["blockchain", "consensus", "cryptographic hashes"]
     }
   ];
-  let sampleIndex = 0;
-
-  // ── Element Selectors ───────────────────────────────────────────────────────
-  const inputEl            = document.getElementById('input-text');
-  const outputEl           = document.getElementById('output-text');
-  const btnHumanize        = document.getElementById('btn-humanize');
-  const btnCopy            = document.getElementById('btn-copy');
-  const btnPdf             = document.getElementById('btn-pdf');
-  const btnClear           = document.getElementById('btn-clear');
-  const btnPaste           = document.getElementById('btn-paste');
-  const btnSample          = document.getElementById('btn-sample');
-  const btnVerifyDetector  = document.getElementById('btn-verify-detector');
-  const spinner            = document.getElementById('spinner');
-  const spinText           = document.getElementById('spin-text');
-  const toast              = document.getElementById('toast');
-  const inputWordCount     = document.getElementById('input-word-count');
-  const outputWordCount    = document.getElementById('output-word-count');
-  const inputCharCount     = document.getElementById('input-char-count');
-  const scoreRow           = document.getElementById('score-row');
-  const outputEmptyHint    = document.getElementById('output-empty-hint');
-  const statEngine         = document.getElementById('stat-engine');
-  const statZeroGpt        = document.getElementById('stat-zerogpt');
-  const statLocalProb      = document.getElementById('stat-local-prob');
-  const statBurstiness     = document.getElementById('stat-burstiness');
-  const statFacts          = document.getElementById('stat-facts');
-  const resultStatusBadge  = document.getElementById('result-status-badge');
-  const btnOpenZeroGpt     = document.getElementById('btn-open-zerogpt');
-
-  // Tabs
-  const modeTabBtns        = document.querySelectorAll('#mode-tabs .tab-btn');
-  const engineTabBtns      = document.querySelectorAll('#engine-tabs .tab-btn');
-
-  // Modal elements
-  const btnOpenSettings    = document.getElementById('btn-open-settings');
-  const modalSettings      = document.getElementById('modal-settings');
-  const btnCloseModal      = document.getElementById('btn-close-modal');
-  const btnCancelSettings  = document.getElementById('btn-cancel-settings');
-  const btnSaveSettings    = document.getElementById('btn-save-settings');
-  const btnClearKey        = document.getElementById('btn-clear-key');
-  const btnTestKey         = document.getElementById('btn-test-key');
-  const inputApiKey        = document.getElementById('input-api-key');
-  const selectModel        = document.getElementById('select-model');
-  const keyStatusMsg       = document.getElementById('key-status-msg');
-  const providerOptions    = document.querySelectorAll('.provider-option');
-  const linkGetKey         = document.getElementById('link-get-key');
-
-  // Prompt Kit modal
-  const modalPrompt        = document.getElementById('modal-prompt');
-  const promptBox          = document.getElementById('prompt-box');
-  const replyBox           = document.getElementById('reply-box');
-  const btnFinishReply     = document.getElementById('btn-finish-reply');
 
   // ── State ───────────────────────────────────────────────────────────────────
-  let currentEngine = 'prompt'; // 'prompt' (Prompt Kit) | 'local' | 'ai' (own key)
-  let currentStyle  = 'natural'; // 'natural' or 'academic'
-  let selectedProvider = 'gemini';
-  let toastTimer = null;
+  let currentTone = localStorage.getItem(STORAGE_KEY_STYLE) || 'natural';
+  let currentEngine = localStorage.getItem(STORAGE_KEY_ENGINE) || 'local';
+  let selectedProvider = localStorage.getItem(STORAGE_KEY_PROVIDER) || 'gemini';
+  let isDiffActive = false;
+  let currentSourceText = '';
+  let currentOutputClean = '';
 
-  const STORAGE_KEY_API_KEY  = 'texthuman_api_key';
-  const STORAGE_KEY_PROVIDER = 'texthuman_provider';
-  const STORAGE_KEY_MODEL    = 'texthuman_model';
+  // ── DOM Element Cache ───────────────────────────────────────────────────────
+  const inputEl = document.getElementById('input-text');
+  const outputPlaceholder = document.getElementById('output-placeholder');
+  const outputContent = document.getElementById('output-content');
+  const outputDiff = document.getElementById('output-diff');
+  
+  const wordCountEl = document.getElementById('word-count');
+  const charCountEl = document.getElementById('char-count');
+  
+  const toneNaturalBtn = document.getElementById('tone-natural');
+  const toneAcademicBtn = document.getElementById('tone-academic');
+  const activeToneLabel = document.getElementById('active-tone-label');
 
-  // ── Initialization ──────────────────────────────────────────────────────────
-  function init() {
-    loadSettings();
-    updateUIState();
-    updateInputCounts();
-    updateOutputCounts();
-    bindEvents();
+  const engineBtnLocal = document.getElementById('engine-btn-local');
+  const engineBtnPrompt = document.getElementById('engine-btn-prompt');
+  const engineBtnAi = document.getElementById('engine-btn-ai');
+  const headerEngineLabel = document.getElementById('header-engine-label');
+  const enginePill = document.getElementById('btn-engine-pill');
+
+  const convertBtn = document.getElementById('convert-btn');
+  const convertBtnLabel = document.getElementById('convert-btn-label');
+  const statusTag = document.getElementById('status-tag');
+  const statusTagText = document.getElementById('status-tag-text');
+
+  const diffBtn = document.getElementById('diff-btn');
+  const diffDot = document.getElementById('diff-dot');
+  const copyBtn = document.getElementById('copy-btn');
+  const copyLabel = document.getElementById('copy-label');
+  const copyIcon = document.getElementById('copy-icon');
+  const refineBtn = document.getElementById('refine-btn');
+  const verifyBtn = document.getElementById('verify-btn');
+  const exportPdfBtn = document.getElementById('export-pdf-btn');
+  const openZeroGptSiteBtn = document.getElementById('btn-open-zerogpt-site');
+
+  const metricZeroGpt = document.getElementById('metric-zerogpt');
+  const metricCadence = document.getElementById('metric-cadence');
+  const metricFacts = document.getElementById('metric-facts');
+
+  const btnLoadSample = document.getElementById('btn-load-sample');
+  const btnClearInput = document.getElementById('btn-clear-input');
+
+  // Modals
+  const modalSettings = document.getElementById('modal-settings');
+  const modalPromptKit = document.getElementById('modal-promptkit');
+  const modalBenchmarks = document.getElementById('modal-benchmarks');
+
+  const btnCloseSettings = document.getElementById('btn-close-settings');
+  const btnClosePromptKit = document.getElementById('btn-close-promptkit');
+  const btnCloseBenchmarks = document.getElementById('btn-close-benchmarks');
+
+  const inputApiKey = document.getElementById('input-api-key');
+  const btnTestKey = document.getElementById('btn-test-key');
+  const btnSaveSettings = document.getElementById('btn-save-settings');
+  const btnClearKey = document.getElementById('btn-clear-key');
+  const provGeminiBtn = document.getElementById('prov-gemini');
+  const provGroqBtn = document.getElementById('prov-groq');
+  const linkGetKey = document.getElementById('link-get-key');
+
+  const promptKitTextarea = document.getElementById('prompt-kit-textarea');
+  const btnCopyPromptKit = document.getElementById('btn-copy-prompt-kit');
+  const replyBox = document.getElementById('reply-box');
+  const btnFinishReply = document.getElementById('btn-finish-reply');
+  const btnOpenChatGPT = document.getElementById('btn-open-chatgpt');
+  const btnOpenClaude = document.getElementById('btn-open-claude');
+  const btnOpenGemini = document.getElementById('btn-open-gemini');
+
+  const benchmarksGrid = document.getElementById('benchmarks-grid');
+
+  // ── Helpers ─────────────────────────────────────────────────────────────────
+  function showToast(message, duration = 3500) {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg');
+    if (!toast || !toastMsg) return;
+    toastMsg.textContent = message;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => toast.classList.remove('show'), duration);
   }
 
-  function loadSettings() {
-    const savedProvider = localStorage.getItem(STORAGE_KEY_PROVIDER);
-    if (savedProvider) selectedProvider = savedProvider;
-    const savedModel = localStorage.getItem(STORAGE_KEY_MODEL);
-    if (savedModel && selectModel) selectModel.value = savedModel;
-
-    // Default is Prompt Kit (no key required)
-    currentEngine = 'prompt';
+  function escapeHtml(str) {
+    return (str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   function getApiKey() {
     return (localStorage.getItem(STORAGE_KEY_API_KEY) || '').trim();
   }
 
-  function updateUIState() {
-    providerOptions.forEach(opt => {
-      if (opt.dataset.provider === selectedProvider) {
-        opt.classList.add('active');
-      } else {
-        opt.classList.remove('active');
+  // ── Word-Level Diff Generator ───────────────────────────────────────────────
+  function generateDiffMarkup(original, modified) {
+    if (!original || !modified) return escapeHtml(modified || '');
+
+    const tokenize = str => str.match(/\S+|\s+/g) || [];
+    const wordsA = tokenize(original);
+    const wordsB = tokenize(modified);
+
+    // Limit matrix size for performance on very long documents
+    if (wordsA.length > 280 || wordsB.length > 280) {
+      const sentsA = original.split(/(?<=[.!?])\s+/);
+      const sentsB = modified.split(/(?<=[.!?])\s+/);
+      let out = '';
+      const maxLen = Math.max(sentsA.length, sentsB.length);
+      for (let k = 0; k < maxLen; k++) {
+        const a = sentsA[k];
+        const b = sentsB[k];
+        if (a && b) {
+          if (a.trim() === b.trim()) {
+            out += escapeHtml(b) + ' ';
+          } else {
+            out += `<span class="diff-del">${escapeHtml(a)}</span> <span class="diff-ins">${escapeHtml(b)}</span> `;
+          }
+        } else if (b) {
+          out += `<span class="diff-ins">${escapeHtml(b)}</span> `;
+        } else if (a) {
+          out += `<span class="diff-del">${escapeHtml(a)}</span> `;
+        }
+      }
+      return out.trim();
+    }
+
+    const m = wordsA.length;
+    const n = wordsB.length;
+    const dp = Array.from({ length: m + 1 }, () => new Uint16Array(n + 1));
+
+    for (let i = 0; i < m; i++) {
+      for (let j = 0; j < n; j++) {
+        if (wordsA[i].toLowerCase() === wordsB[j].toLowerCase()) {
+          dp[i + 1][j + 1] = dp[i][j] + 1;
+        } else {
+          dp[i + 1][j + 1] = Math.max(dp[i + 1][j], dp[i][j + 1]);
+        }
+      }
+    }
+
+    let i = m, j = n;
+    const chunks = [];
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0 && wordsA[i - 1].toLowerCase() === wordsB[j - 1].toLowerCase()) {
+        chunks.push({ type: 'same', text: wordsB[j - 1] });
+        i--; j--;
+      } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+        chunks.push({ type: 'ins', text: wordsB[j - 1] });
+        j--;
+      } else if (i > 0) {
+        chunks.push({ type: 'del', text: wordsA[i - 1] });
+        i--;
+      }
+    }
+
+    chunks.reverse();
+    return chunks.map(c => {
+      const esc = escapeHtml(c.text);
+      if (c.type === 'ins') {
+        return /^\s+$/.test(c.text) ? c.text : `<span class="diff-ins">${esc}</span>`;
+      }
+      if (c.type === 'del') {
+        return /^\s+$/.test(c.text) ? '' : `<span class="diff-del">${esc}</span>`;
+      }
+      return esc;
+    }).join('');
+  }
+
+  // ── Tone Switching ──────────────────────────────────────────────────────────
+  function setTone(tone) {
+    currentTone = tone;
+    localStorage.setItem(STORAGE_KEY_STYLE, tone);
+
+    if (tone === 'natural') {
+      toneNaturalBtn.className = 'px-4 py-1.5 font-label-md text-label-md transition-colors bg-primary text-on-primary font-medium';
+      toneAcademicBtn.className = 'px-4 py-1.5 font-label-md text-label-md transition-colors text-on-surface-variant hover:text-on-surface';
+      activeToneLabel.textContent = 'Natural Cadence';
+    } else {
+      toneAcademicBtn.className = 'px-4 py-1.5 font-label-md text-label-md transition-colors bg-primary text-on-primary font-medium';
+      toneNaturalBtn.className = 'px-4 py-1.5 font-label-md text-label-md transition-colors text-on-surface-variant hover:text-on-surface';
+      activeToneLabel.textContent = 'Academic Cadence';
+    }
+
+    if (currentOutputClean) {
+      runConversion();
+    }
+  }
+
+  // ── Engine Switching ────────────────────────────────────────────────────────
+  function setEngine(engine) {
+    currentEngine = engine;
+    localStorage.setItem(STORAGE_KEY_ENGINE, engine);
+
+    const buttons = [
+      { id: 'local', btn: engineBtnLocal },
+      { id: 'prompt', btn: engineBtnPrompt },
+      { id: 'ai', btn: engineBtnAi }
+    ];
+
+    buttons.forEach(b => {
+      if (b.btn) {
+        if (b.id === engine) {
+          b.btn.className = 'px-3 py-1.5 font-label-sm text-label-sm transition-colors bg-surface-container text-primary font-medium';
+        } else {
+          b.btn.className = 'px-3 py-1.5 font-label-sm text-label-sm transition-colors text-on-surface-variant hover:text-on-surface';
+        }
       }
     });
 
-    if (selectedProvider === 'gemini') {
-      linkGetKey.href = 'https://aistudio.google.com/app/apikey';
-      linkGetKey.textContent = 'Get Free Key (Google AI Studio) →';
-      inputApiKey.placeholder = 'Paste Gemini API key...';
-      if (selectModel) {
-        selectModel.innerHTML = `
-          <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fastest)</option>
-          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-        `;
+    if (engine === 'local') {
+      headerEngineLabel.textContent = 'Local Engine';
+    } else if (engine === 'prompt') {
+      headerEngineLabel.textContent = 'Prompt Kit';
+    } else {
+      const key = getApiKey();
+      headerEngineLabel.textContent = key ? (selectedProvider === 'gemini' ? 'Gemini 2.0' : 'Groq 70B') : 'AI Engine (Needs Key)';
+    }
+
+    updateSettingsModalEngineState();
+  }
+
+  function updateSettingsModalEngineState() {
+    const opts = [
+      { id: 'local', el: document.getElementById('modal-opt-local') },
+      { id: 'prompt', el: document.getElementById('modal-opt-prompt') },
+      { id: 'ai', el: document.getElementById('modal-opt-ai') }
+    ];
+
+    opts.forEach(o => {
+      if (o.el) {
+        if (o.id === currentEngine) {
+          o.el.className = 'p-3 border border-primary bg-surface-container-low text-primary text-left text-sm font-medium transition-colors';
+        } else {
+          o.el.className = 'p-3 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-sm font-medium transition-colors';
+        }
+      }
+    });
+  }
+
+  // ── Input Live Counters ─────────────────────────────────────────────────────
+  function handleInputUpdate() {
+    const val = inputEl.value;
+    const words = TextHumanizer.countWords(val);
+    const chars = val.length;
+    wordCountEl.textContent = `${words} words`;
+    charCountEl.textContent = `${chars} chars`;
+  }
+
+  function loadSampleText(sampleOverride) {
+    const text = sampleOverride || BENCHMARKS[0].raw_ai;
+    inputEl.value = text;
+    handleInputUpdate();
+    showToast('Sample text loaded.');
+  }
+
+  function clearInput() {
+    inputEl.value = '';
+    handleInputUpdate();
+    outputPlaceholder.classList.remove('hidden');
+    outputContent.classList.add('hidden');
+    outputDiff.classList.add('hidden');
+    metricZeroGpt.textContent = '--';
+    metricCadence.textContent = '--';
+    metricFacts.textContent = '--';
+    currentSourceText = '';
+    currentOutputClean = '';
+  }
+
+  // ── Diff View Toggle ────────────────────────────────────────────────────────
+  function toggleDiff() {
+    isDiffActive = !isDiffActive;
+
+    if (isDiffActive) {
+      diffDot.classList.remove('bg-outline-variant');
+      diffDot.classList.add('bg-primary');
+      diffBtn.classList.add('text-primary');
+      if (currentOutputClean) {
+        outputContent.classList.add('hidden');
+        outputDiff.classList.remove('hidden');
       }
     } else {
-      linkGetKey.href = 'https://console.groq.com/keys';
-      linkGetKey.textContent = 'Get Free Key (Groq Console) →';
-      inputApiKey.placeholder = 'Paste Groq API key...';
-      if (selectModel) {
-        selectModel.innerHTML = `
-          <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</option>
-        `;
+      diffDot.classList.add('bg-outline-variant');
+      diffDot.classList.remove('bg-primary');
+      diffBtn.classList.remove('text-primary');
+      if (currentOutputClean) {
+        outputDiff.classList.add('hidden');
+        outputContent.classList.remove('hidden');
       }
-    }
-  }
-
-  // ── Event Bindings ──────────────────────────────────────────────────────────
-  function bindEvents() {
-    // Mode tabs (Natural / Academic)
-    modeTabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        modeTabBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentStyle = btn.dataset.mode;
-        showToast(`Tone set to ${btn.textContent.trim()}`);
-      });
-    });
-
-    // Engine tabs (Local Free / Custom API Key)
-    engineTabBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        engineTabBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        currentEngine = btn.dataset.engine;
-
-        if (currentEngine === 'ai') {
-          if (!getApiKey()) {
-            openSettingsModal();
-            showToast('Enter your Google Gemini or Groq key to enable custom AI.');
-          } else {
-            showToast('Using your custom API key.');
-          }
-        } else {
-          showToast(currentEngine === 'prompt' ? 'Prompt Kit: get a prompt for your own AI chat. No key needed.' : 'Local Engine: instant and private, no key needed.');
-        }
-      });
-    });
-
-    // Input word count listener
-    inputEl.addEventListener('input', updateInputCounts);
-
-    // Sample text button (cycles through verified multi-detector samples)
-    btnSample.addEventListener('click', () => {
-      const s = SAMPLES[sampleIndex % SAMPLES.length];
-      inputEl.value = s.text;
-      sampleIndex++;
-      updateInputCounts();
-      showToast(`Loaded sample: ${s.name} (Click Convert to test)`);
-    });
-
-    // Clear button
-    btnClear.addEventListener('click', () => {
-      inputEl.value = '';
-      outputEl.textContent = '';
-      scoreRow.style.display = 'none';
-      if (outputEmptyHint) outputEmptyHint.style.display = 'block';
-      if (resultStatusBadge) resultStatusBadge.style.display = 'none';
-      updateInputCounts();
-      updateOutputCounts();
-      inputEl.focus();
-    });
-
-    // Paste button
-    btnPaste.addEventListener('click', async () => {
-      try {
-        const text = await navigator.clipboard.readText();
-        if (text) {
-          inputEl.value = text;
-          updateInputCounts();
-          showToast('Text pasted from clipboard.');
-        }
-      } catch {
-        showToast('Press Ctrl+V to paste your text.');
-      }
-    });
-
-    // Primary action buttons
-    btnHumanize.addEventListener('click', handleHumanize);
-    btnCopy.addEventListener('click', handleCopy);
-    btnPdf.addEventListener('click', handlePdfExport);
-    if (btnVerifyDetector) {
-      btnVerifyDetector.addEventListener('click', handleManualVerifyDetector);
-    }
-    if (btnOpenZeroGpt) {
-      btnOpenZeroGpt.addEventListener('click', async () => {
-        const text = (outputEl.innerText || outputEl.textContent || '').trim();
-        if (!text) {
-          showToast('No text to verify. Click Convert first.');
-          return;
-        }
-        await copyText(text);
-        window.open('https://www.zerogpt.com/', '_blank', 'noopener');
-        showToast('Text copied! Opening ZeroGPT in a new tab...', 4000);
-      });
-    }
-
-    // Prompt Kit
-    document.getElementById('btn-close-prompt').addEventListener('click', closePromptModal);
-    modalPrompt.addEventListener('click', (e) => { if (e.target === modalPrompt) closePromptModal(); });
-    document.getElementById('btn-copy-prompt').addEventListener('click', async () => { await copyText(promptBox.value); showToast('Prompt copied.'); });
-    document.getElementById('btn-reroll-prompt').addEventListener('click', () => { renderPrompt(); showToast('New prompt variant generated.'); });
-    document.getElementById('btn-copy-refine').addEventListener('click', async () => { await copyText(TextHumanizer.buildRefinePrompt(currentStyle)); showToast('2nd-pass prompt copied. Send it in the same chat.'); });
-    document.querySelectorAll('[data-open-ai]').forEach(b => b.addEventListener('click', () => openAiChat(b.dataset.openAi)));
-    btnFinishReply.addEventListener('click', handleFinishReply);
-
-    // Modal triggers
-    btnOpenSettings.addEventListener('click', openSettingsModal);
-    btnCloseModal.addEventListener('click', closeSettingsModal);
-    btnCancelSettings.addEventListener('click', closeSettingsModal);
-
-    modalSettings.addEventListener('click', (e) => {
-      if (e.target === modalSettings) closeSettingsModal();
-    });
-
-    providerOptions.forEach(opt => {
-      opt.addEventListener('click', () => {
-        selectedProvider = opt.dataset.provider;
-        updateUIState();
-      });
-    });
-
-    btnTestKey.addEventListener('click', handleTestKey);
-    btnSaveSettings.addEventListener('click', handleSaveSettings);
-
-    btnClearKey.addEventListener('click', () => {
-      localStorage.removeItem(STORAGE_KEY_API_KEY);
-      inputApiKey.value = '';
-      keyStatusMsg.className = 'field-status';
-      keyStatusMsg.textContent = '';
-      currentEngine = 'local';
-      document.getElementById('tab-local')?.click();
-      updateUIState();
-      showToast('Key cleared. Switched back to Local Free Engine.');
-    });
-
-    // Keyboard Shortcuts
-    document.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-        e.preventDefault();
-        btnHumanize.click();
-      }
-      if (e.key === 'Escape' && modalSettings.classList.contains('active')) {
-        closeSettingsModal();
-      }
-      if (e.key === 'Escape' && modalPrompt.classList.contains('active')) {
-        closePromptModal();
-      }
-    });
-  }
-
-  // ── Word & Character Counts ─────────────────────────────────────────────────
-  function updateInputCounts() {
-    const text = inputEl.value;
-    const words = TextHumanizer.countWords(text);
-    inputWordCount.textContent = `${words} word${words !== 1 ? 's' : ''}`;
-    inputCharCount.textContent = `${text.length.toLocaleString()} characters`;
-  }
-
-  function updateOutputCounts() {
-    const text = (outputEl.innerText || outputEl.textContent || '').trim();
-    const words = TextHumanizer.countWords(text);
-    outputWordCount.textContent = `${words} word${words !== 1 ? 's' : ''}`;
-  }
-
-  function showToast(message, duration = 3000) {
-    toast.textContent = message;
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toast.classList.remove('show');
-    }, duration);
-  }
-
-  // ── Result Presentation (honest: shows real detector output or "Unverified") ──
-  function setDetectorUI(zg) {
-    const pct = zg && typeof zg.fakePercentage === 'number' ? zg.fakePercentage : null;
-
-    if (statZeroGpt) {
-      if (pct === null) {
-        statZeroGpt.textContent = 'Unverified';
-        statZeroGpt.className = 'warn';
-        statZeroGpt.title = (zg && zg.feedback) || 'Detector unavailable';
-      } else {
-        statZeroGpt.textContent = `${pct.toFixed(1)}% AI`;
-        statZeroGpt.className = pct <= 10 ? 'good' : '';
-        statZeroGpt.title = zg.feedback || '';
-      }
-    }
-
-    if (resultStatusBadge) {
-      resultStatusBadge.style.display = 'inline-block';
-      if (pct === null) {
-        resultStatusBadge.className = 'status-indicator';
-        resultStatusBadge.textContent = 'Not verified · test on a detector';
-      } else if (pct <= 10) {
-        resultStatusBadge.className = 'status-indicator pass';
-        resultStatusBadge.textContent = `${pct.toFixed(1)}% AI · Looks Human`;
-      } else if (pct <= 35) {
-        resultStatusBadge.className = 'status-indicator pass';
-        resultStatusBadge.textContent = `${pct.toFixed(1)}% AI · Mostly Human`;
-      } else {
-        resultStatusBadge.className = 'status-indicator';
-        resultStatusBadge.textContent = `${pct.toFixed(1)}% AI · Try Re-roll / 2nd pass`;
-      }
-    }
-  }
-
-  async function presentResult(sourceText, resultText, engineName) {
-    outputEl.textContent = resultText;
-    updateOutputCounts();
-
-    const missingAnchors = TextHumanizer.verifyAnchors(sourceText, resultText);
-    const totalAnchors = TextHumanizer.collectAnchors(sourceText);
-
-    if (outputEmptyHint) outputEmptyHint.style.display = 'none';
-    if (scoreRow) scoreRow.style.display = 'flex';
-    if (statEngine) statEngine.textContent = engineName;
-
-    // Local Detection Metrics
-    const localProb = TextHumanizer.calculateAiProbability(resultText);
-    const sents = TextHumanizer.splitIntoSentences(resultText);
-    const burstVal = TextHumanizer.calculateBurstiness(sents);
-
-    if (statLocalProb) {
-      statLocalProb.textContent = `${localProb.toFixed(1)}% AI`;
-      statLocalProb.className = localProb <= 15 ? 'good' : (localProb <= 35 ? 'warn' : '');
-    }
-
-    if (statBurstiness) {
-      statBurstiness.textContent = `${burstVal.toFixed(1)}%`;
-      statBurstiness.className = burstVal >= 70 ? 'good' : (burstVal >= 50 ? '' : 'warn');
-    }
-
-    if (statFacts) {
-      if (missingAnchors.length === 0) {
-        statFacts.textContent = `100% (${totalAnchors.length} anchors)`;
-        statFacts.className = 'good';
-        statFacts.title = '';
-      } else {
-        statFacts.textContent = `${totalAnchors.length - missingAnchors.length}/${totalAnchors.length} retained`;
-        statFacts.className = 'warn';
-        statFacts.title = `Missing: ${missingAnchors.join(', ')}`;
-      }
-    }
-
-    if (statZeroGpt) {
-      statZeroGpt.textContent = 'Checking...';
-      statZeroGpt.className = '';
-    }
-    spinText.textContent = 'Checking ZeroGPT live...';
-    const zg = await TextHumanizer.checkZeroGPTLive(resultText);
-    setDetectorUI(zg);
-    return zg;
-  }
-
-  function detectorToast(zg) {
-    return typeof zg.fakePercentage === 'number'
-      ? `ZeroGPT: ${zg.fakePercentage.toFixed(1)}% AI`
-      : 'Detector unreachable. Please test the text on ZeroGPT/GPTZero yourself.';
-  }
-
-  // ── Humanize Execution ──────────────────────────────────────────────────────
-  async function handleHumanize() {
-    const text = inputEl.value.trim();
-    if (!text) {
-      showToast('Please enter or paste text to humanize.');
-      inputEl.focus();
-      return;
-    }
-
-    // Prompt Kit: no network call, hand the user a ready-made prompt
-    if (currentEngine === 'prompt') {
-      openPromptModal(text);
-      return;
-    }
-
-    const key = getApiKey();
-    if (currentEngine === 'ai' && !key) {
-      openSettingsModal();
-      showToast('Paste an API key or switch to Prompt Kit / Local.');
-      return;
-    }
-
-    btnHumanize.disabled = true;
-    spinner.style.display = 'flex';
-    spinText.textContent = 'Rewriting...';
-
-    try {
-      let resultText = '';
-      let engineName = 'Local Engine';
-
-      if (currentEngine === 'ai') {
-        const model = selectModel ? selectModel.value : 'gemini-2.0-flash';
-        engineName = selectedProvider === 'gemini' ? `Gemini (${model}) + polish` : 'Groq (Llama 3.3) + polish';
-        const raw = selectedProvider === 'gemini'
-          ? await TextHumanizer.callGeminiAPI(key, model, text, currentStyle)
-          : await TextHumanizer.callGroqAPI(key, text, currentStyle);
-        resultText = TextHumanizer.polishText(raw, currentStyle);
-      } else {
-        resultText = TextHumanizer.humanizeLocalText(text, currentStyle);
-      }
-
-      const zg = await presentResult(text, resultText, engineName);
-      showToast(`Conversion complete · ${detectorToast(zg)}`, 4500);
-    } catch (err) {
-      console.error(err);
-      showToast(`Error: ${err.message || 'Transformation failed'}`);
-    } finally {
-      btnHumanize.disabled = false;
-      spinner.style.display = 'none';
-    }
-  }
-
-  // ── Prompt Kit ──────────────────────────────────────────────────────────────
-  let promptSourceText = '';
-
-  function renderPrompt() {
-    promptBox.value = TextHumanizer.buildPrompt(promptSourceText, currentStyle);
-  }
-
-  function openPromptModal(text) {
-    promptSourceText = text;
-    renderPrompt();
-    replyBox.value = '';
-    modalPrompt.classList.add('active');
-  }
-
-  function closePromptModal() {
-    modalPrompt.classList.remove('active');
-  }
-
-  async function copyText(str) {
-    try {
-      await navigator.clipboard.writeText(str);
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = str;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-    }
-  }
-
-  async function openAiChat(target) {
-    const prompt = promptBox.value;
-    await copyText(prompt);
-    const q = encodeURIComponent(prompt);
-    let url = 'https://gemini.google.com/app';
-    if (target === 'chatgpt') url = q.length < 6000 ? `https://chatgpt.com/?q=${q}` : 'https://chatgpt.com/';
-    if (target === 'claude') url = q.length < 6000 ? `https://claude.ai/new?q=${q}` : 'https://claude.ai/new';
-    window.open(url, '_blank', 'noopener');
-    showToast('Prompt copied. If the chat opens empty, just paste it.', 4000);
-  }
-
-  async function handleFinishReply() {
-    const reply = replyBox.value.trim();
-    if (!reply) {
-      showToast("Paste the AI's reply first.");
-      replyBox.focus();
-      return;
-    }
-
-    btnFinishReply.disabled = true;
-    closePromptModal();
-    spinner.style.display = 'flex';
-    spinText.textContent = 'Polishing...';
-
-    try {
-      const cleaned = TextHumanizer.cleanAIOutput(reply);
-      const polished = TextHumanizer.polishText(cleaned, currentStyle);
-      const zg = await presentResult(promptSourceText, polished, 'Prompt Kit + local polish');
-      showToast(`Done · ${detectorToast(zg)}`, 4500);
-    } catch (err) {
-      console.error(err);
-      showToast(`Error: ${err.message || 'Polishing failed'}`);
-    } finally {
-      btnFinishReply.disabled = false;
-      spinner.style.display = 'none';
-    }
-  }
-
-  // ── Manual Live Detector Verification ───────────────────────────────────────
-  async function handleManualVerifyDetector() {
-    const text = (outputEl.innerText || outputEl.textContent || '').trim();
-    if (!text) {
-      showToast('No output text to verify. Click Convert first.');
-      return;
-    }
-
-    btnVerifyDetector.disabled = true;
-    showToast('Checking text against live ZeroGPT detector...');
-
-    try {
-      const zg = await TextHumanizer.checkZeroGPTLive(text);
-      setDetectorUI(zg);
-      showToast(detectorToast(zg), 4500);
-    } finally {
-      btnVerifyDetector.disabled = false;
     }
   }
 
   // ── Copy to Clipboard ───────────────────────────────────────────────────────
-  async function handleCopy() {
-    const text = (outputEl.innerText || outputEl.textContent || '').trim();
-    if (!text) {
-      showToast('No text to copy.');
+  async function copyOutput() {
+    if (!currentOutputClean) {
+      showToast('No output to copy yet.');
       return;
     }
+    try {
+      await navigator.clipboard.writeText(currentOutputClean);
+      copyLabel.textContent = 'Copied!';
+      copyIcon.textContent = 'check';
+      copyBtn.classList.add('text-primary');
+      setTimeout(() => {
+        copyLabel.textContent = 'Copy';
+        copyIcon.textContent = 'content_copy';
+        copyBtn.classList.remove('text-primary');
+      }, 2000);
+      showToast('Humanized text copied to clipboard.');
+    } catch {
+      showToast('Failed to copy.');
+    }
+  }
+
+  // ── Conversion Execution ────────────────────────────────────────────────────
+  async function runConversion(isRefinePass = false) {
+    const rawInput = isRefinePass ? currentOutputClean : inputEl.value.trim();
+    if (!rawInput) {
+      loadSampleText();
+      return;
+    }
+
+    if (currentEngine === 'prompt' && !isRefinePass) {
+      openPromptKitModal(rawInput);
+      return;
+    }
+
+    const key = getApiKey();
+    if (currentEngine === 'ai' && !key && !isRefinePass) {
+      openSettingsModal();
+      showToast('Please add an API key for AI Engine or select Local Free.');
+      return;
+    }
+
+    // UI Loading state
+    statusTag.classList.remove('hidden');
+    statusTag.classList.add('flex');
+    statusTagText.textContent = isRefinePass ? 'Refining cadence (2nd pass)...' : 'Synthesizing human cadence...';
+    convertBtn.disabled = true;
+    convertBtn.classList.add('opacity-70');
 
     try {
-      await navigator.clipboard.writeText(text);
-      btnCopy.classList.add('success');
-      showToast('Copied to clipboard.');
-      setTimeout(() => btnCopy.classList.remove('success'), 1800);
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      showToast('Copied to clipboard.');
+      let resultText = '';
+
+      if (currentEngine === 'ai' && !isRefinePass) {
+        const model = selectedProvider === 'gemini' ? 'gemini-2.0-flash' : 'llama-3.3-70b-versatile';
+        const raw = selectedProvider === 'gemini'
+          ? await TextHumanizer.callGeminiAPI(key, model, rawInput, currentTone)
+          : await TextHumanizer.callGroqAPI(key, rawInput, currentTone);
+        resultText = TextHumanizer.polishText(raw, currentTone);
+      } else {
+        const opts = isRefinePass ? { synProb: 0.08, noHooks: true } : {};
+        resultText = TextHumanizer.humanizeLocalText(rawInput, currentTone, opts);
+      }
+
+      currentSourceText = inputEl.value.trim();
+      currentOutputClean = resultText;
+
+      // Update Output View
+      outputPlaceholder.classList.add('hidden');
+      outputContent.textContent = resultText;
+      outputDiff.innerHTML = generateDiffMarkup(currentSourceText, resultText);
+
+      if (isDiffActive) {
+        outputContent.classList.add('hidden');
+        outputDiff.classList.remove('hidden');
+      } else {
+        outputDiff.classList.add('hidden');
+        outputContent.classList.remove('hidden');
+      }
+
+      // Verification metrics
+      const missingAnchors = TextHumanizer.verifyAnchors(currentSourceText, resultText);
+      const totalAnchors = TextHumanizer.collectAnchors(currentSourceText);
+      if (missingAnchors.length === 0) {
+        metricFacts.textContent = `100% (${totalAnchors.length} anchors)`;
+        metricFacts.className = 'text-primary font-medium';
+      } else {
+        metricFacts.textContent = `${totalAnchors.length - missingAnchors.length}/${totalAnchors.length} retained`;
+        metricFacts.className = 'text-error font-medium';
+      }
+
+      const sents = TextHumanizer.splitIntoSentences(resultText);
+      const burstVal = Math.round(TextHumanizer.calculateBurstiness(sents));
+      metricCadence.textContent = `${burstVal}% organic`;
+
+      // Trigger Live ZeroGPT check
+      statusTagText.textContent = 'Checking ZeroGPT live...';
+      const zg = await TextHumanizer.checkZeroGPTLive(resultText);
+      updateDetectorBadge(zg);
+
+      showToast(isRefinePass ? '2nd pass refinement complete.' : 'Cadence transformation complete.');
+    } catch (err) {
+      console.error(err);
+      showToast(`Error: ${err.message || 'Transformation failed'}`);
+    } finally {
+      statusTag.classList.add('hidden');
+      statusTag.classList.remove('flex');
+      convertBtn.disabled = false;
+      convertBtn.classList.remove('opacity-70');
     }
   }
 
-  // ── Export to PDF ───────────────────────────────────────────────────────────
-  function handlePdfExport() {
-    const text = (outputEl.innerText || outputEl.textContent || '').trim();
-    if (!text) {
-      showToast('No text to export.');
+  function updateDetectorBadge(zg) {
+    if (!zg || zg.fakePercentage === null) {
+      metricZeroGpt.textContent = 'Unverified (Offline)';
+      metricZeroGpt.className = 'text-on-surface-variant font-medium';
+      metricZeroGpt.title = zg ? zg.feedback : '';
       return;
     }
 
-    const printWindow = window.open('', '_blank', 'width=820,height=800');
-    if (!printWindow) {
-      showToast('Pop-up blocked. Please allow pop-ups to print PDF.');
-      return;
-    }
+    const pct = zg.fakePercentage;
+    metricZeroGpt.textContent = `${pct.toFixed(1)}% AI`;
 
-    const formattedHtml = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\n\n+/g, '</p><p>')
-      .replace(/\n/g, '<br>');
-
-    printWindow.document.write(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Humanized Document — TextHuman</title>
-  <style>
-    @page { margin: 25mm 20mm; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      font-size: 11pt;
-      line-height: 1.8;
-      color: #111827;
-      max-width: 680px;
-      margin: 40px auto;
-      padding: 0 20px;
+    if (pct <= 20) {
+      metricZeroGpt.className = 'text-emerald-400 font-medium';
+      metricZeroGpt.title = 'Human Written';
+    } else if (pct <= 45) {
+      metricZeroGpt.className = 'text-emerald-400 font-medium';
+      metricZeroGpt.title = 'Likely Human';
+    } else if (pct <= 65) {
+      metricZeroGpt.className = 'text-amber-400 font-medium';
+      metricZeroGpt.title = 'Mixed Signals';
+    } else {
+      metricZeroGpt.className = 'text-rose-400 font-medium';
+      metricZeroGpt.title = 'AI Generated';
     }
-    .doc-header {
-      border-bottom: 1px solid #d1d5db;
-      padding-bottom: 12px;
-      margin-bottom: 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .doc-title {
-      font-size: 11pt;
-      font-weight: 700;
-      color: #1f2937;
-    }
-    .doc-meta {
-      font-size: 8.5pt;
-      color: #6b7280;
-    }
-    p {
-      margin-bottom: 1.25em;
-      text-align: justify;
-    }
-    @media print {
-      body { margin: 0; padding: 0; }
-      .doc-header { margin-bottom: 20px; }
-    }
-  </style>
-</head>
-<body>
-  <div class="doc-header">
-    <div class="doc-title">Humanized Document</div>
-    <div class="doc-meta">${new Date().toLocaleDateString()}</div>
-  </div>
-  <article>
-    <p>${formattedHtml}</p>
-  </article>
-  <script>
-    window.onload = function() {
-      setTimeout(function() {
-        window.print();
-      }, 250);
-    };
-  <\/script>
-</body>
-</html>`);
-    printWindow.document.close();
-    showToast('Print dialog opened. Select "Save as PDF".');
   }
 
-  // ── Modal Handlers ──────────────────────────────────────────────────────────
+  // ── Verify Live Action ──────────────────────────────────────────────────────
+  async function runVerifyLive() {
+    if (!currentOutputClean) {
+      showToast('No output to verify. Convert some text first.');
+      return;
+    }
+    statusTag.classList.remove('hidden');
+    statusTag.classList.add('flex');
+    statusTagText.textContent = 'Verifying against ZeroGPT API...';
+    try {
+      const zg = await TextHumanizer.checkZeroGPTLive(currentOutputClean);
+      updateDetectorBadge(zg);
+      if (typeof zg.fakePercentage === 'number') {
+        showToast(`ZeroGPT Verified: ${zg.fakePercentage.toFixed(1)}% AI (${zg.feedback})`, 4500);
+      } else {
+        showToast('Direct detector blocked by browser CORS. Run node server.js or click Open ZeroGPT.', 4500);
+      }
+    } catch (err) {
+      showToast('Detector verification failed.');
+    } finally {
+      statusTag.classList.add('hidden');
+      statusTag.classList.remove('flex');
+    }
+  }
+
+  // ── Open ZeroGPT Website ────────────────────────────────────────────────────
+  async function openZeroGptSite() {
+    if (!currentOutputClean) {
+      showToast('Convert text first.');
+      return;
+    }
+    await navigator.clipboard.writeText(currentOutputClean).catch(() => {});
+    window.open('https://www.zerogpt.com/', '_blank', 'noopener,noreferrer');
+    showToast('Copied output! Paste directly into the ZeroGPT box in the new tab.', 4500);
+  }
+
+  // ── Export / PDF Action ─────────────────────────────────────────────────────
+  function exportOutput() {
+    if (!currentOutputClean) {
+      showToast('No output to export.');
+      return;
+    }
+    window.print();
+  }
+
+  // ── Modal Handling ──────────────────────────────────────────────────────────
   function openSettingsModal() {
     inputApiKey.value = getApiKey();
-    keyStatusMsg.className = 'field-status';
-    keyStatusMsg.textContent = '';
+    updateProviderSelectionUI(selectedProvider);
+    updateSettingsModalEngineState();
     modalSettings.classList.add('active');
-    inputApiKey.focus();
   }
 
   function closeSettingsModal() {
     modalSettings.classList.remove('active');
   }
 
-  async function handleTestKey() {
-    const key = inputApiKey.value.trim();
-    if (!key) {
-      keyStatusMsg.className = 'field-status error';
-      keyStatusMsg.textContent = 'Enter an API key first.';
-      return;
-    }
-
-    btnTestKey.disabled = true;
-    btnTestKey.textContent = 'Testing...';
-    keyStatusMsg.className = 'field-status';
-    keyStatusMsg.textContent = '';
-
-    try {
-      if (selectedProvider === 'gemini') {
-        const model = selectModel ? selectModel.value : 'gemini-2.0-flash';
-        await TextHumanizer.callGeminiAPI(key, model, "Hello world test", "natural");
-      } else {
-        await TextHumanizer.callGroqAPI(key, "Hello world test", "natural");
-      }
-      keyStatusMsg.className = 'field-status success';
-      keyStatusMsg.textContent = 'Key verified successfully.';
-    } catch (err) {
-      keyStatusMsg.className = 'field-status error';
-      keyStatusMsg.textContent = `Test failed: ${err.message}`;
-    } finally {
-      btnTestKey.disabled = false;
-      btnTestKey.textContent = 'Test';
+  function updateProviderSelectionUI(prov) {
+    selectedProvider = prov;
+    localStorage.setItem(STORAGE_KEY_PROVIDER, prov);
+    if (prov === 'gemini') {
+      provGeminiBtn.className = 'p-3 border border-primary bg-surface-container-low text-primary text-left text-sm font-medium';
+      provGroqBtn.className = 'p-3 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-sm font-medium';
+      inputApiKey.placeholder = 'AIzaSy... (Gemini API Key)';
+      linkGetKey.href = 'https://aistudio.google.com/app/apikey';
+      linkGetKey.textContent = 'Get free Google AI Studio key →';
+    } else {
+      provGroqBtn.className = 'p-3 border border-primary bg-surface-container-low text-primary text-left text-sm font-medium';
+      provGeminiBtn.className = 'p-3 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-sm font-medium';
+      inputApiKey.placeholder = 'gsk_... (Groq API Key)';
+      linkGetKey.href = 'https://console.groq.com/keys';
+      linkGetKey.textContent = 'Get free Groq Cloud key →';
     }
   }
 
+  function openPromptKitModal(text) {
+    const src = text || inputEl.value.trim() || BENCHMARKS[0].raw_ai;
+    promptKitTextarea.value = TextHumanizer.buildPrompt(src, currentTone);
+    replyBox.value = '';
+    modalPromptKit.classList.add('active');
+  }
+
+  function closePromptKitModal() {
+    modalPromptKit.classList.remove('active');
+  }
+
+  function openBenchmarksModal() {
+    renderBenchmarks();
+    modalBenchmarks.classList.add('active');
+  }
+
+  function closeBenchmarksModal() {
+    modalBenchmarks.classList.remove('active');
+  }
+
+  function renderBenchmarks() {
+    if (!benchmarksGrid) return;
+    benchmarksGrid.innerHTML = BENCHMARKS.map((b, i) => `
+      <div class="p-4 bg-surface-container-lowest border border-surface-container-highest flex flex-col justify-between gap-3 hover:border-outline transition-colors">
+        <div>
+          <div class="flex items-center justify-between gap-2">
+            <span class="font-headline-sm text-[16px] text-primary">${b.topic}</span>
+            <span class="font-label-sm text-[10px] text-outline px-1.5 py-0.5 border border-surface-container-highest">${b.tag}</span>
+          </div>
+          <p class="font-body-sm text-[12px] text-on-surface-variant mt-2 line-clamp-3 leading-relaxed">${b.raw_ai}</p>
+        </div>
+        <div class="flex items-center justify-between pt-2 border-t border-surface-container-high/60">
+          <span class="font-label-sm text-[11px] text-outline">${b.anchors.join(', ')}</span>
+          <button class="h-7 px-3 bg-surface-container-low hover:bg-primary hover:text-on-primary border border-surface-container-highest text-primary font-label-sm text-label-sm font-medium transition-colors cursor-pointer" onclick="window.__loadBenchmark(${i})">
+            Load into Studio
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.__loadBenchmark = (index) => {
+    const item = BENCHMARKS[index];
+    if (item) {
+      inputEl.value = item.raw_ai;
+      handleInputUpdate();
+      closeBenchmarksModal();
+      showToast(`Loaded "${item.topic}". Click Humanize Text to convert.`);
+    }
+  };
+
+  // ── Settings Actions ────────────────────────────────────────────────────────
   function handleSaveSettings() {
     const key = inputApiKey.value.trim();
     if (key) {
       localStorage.setItem(STORAGE_KEY_API_KEY, key);
-      currentEngine = 'ai';
-      document.getElementById('tab-ai')?.click();
+      setEngine('ai');
+      showToast('API Key saved. AI Engine activated.');
     } else {
-      localStorage.removeItem(STORAGE_KEY_API_KEY);
+      showToast('Settings saved.');
     }
-    localStorage.setItem(STORAGE_KEY_PROVIDER, selectedProvider);
-    if (selectModel) {
-      localStorage.setItem(STORAGE_KEY_MODEL, selectModel.value);
-    }
-
-    updateUIState();
     closeSettingsModal();
-    showToast('Settings saved.');
   }
 
-  // ── Initialize App ──────────────────────────────────────────────────────────
-  init();
+  async function handleTestKey() {
+    const key = inputApiKey.value.trim();
+    if (!key) {
+      showToast('Enter an API key first.');
+      return;
+    }
+    btnTestKey.disabled = true;
+    btnTestKey.textContent = 'Testing...';
+    try {
+      if (selectedProvider === 'gemini') {
+        await TextHumanizer.callGeminiAPI(key, 'gemini-2.0-flash', 'Ping test.', 'natural');
+      } else {
+        await TextHumanizer.callGroqAPI(key, 'Ping test.', 'natural');
+      }
+      showToast('API Key successfully verified!');
+    } catch (err) {
+      showToast(`Key error: ${err.message || 'Connection failed'}`);
+    } finally {
+      btnTestKey.disabled = false;
+      btnTestKey.textContent = 'Test Connection';
+    }
+  }
+
+  function handleClearKey() {
+    localStorage.removeItem(STORAGE_KEY_API_KEY);
+    inputApiKey.value = '';
+    setEngine('local');
+    showToast('API Key removed. Switched to Local Free Engine.');
+  }
+
+  // ── Prompt Kit Modal Direct Jump ────────────────────────────────────────────
+  async function copyAndOpenAiChat(target) {
+    const prompt = promptKitTextarea.value;
+    await navigator.clipboard.writeText(prompt).catch(() => {});
+    const q = encodeURIComponent(prompt);
+    let url = 'https://chatgpt.com/';
+    if (target === 'chatgpt') url = q.length < 5000 ? `https://chatgpt.com/?q=${q}` : 'https://chatgpt.com/';
+    if (target === 'claude') url = q.length < 5000 ? `https://claude.ai/new?q=${q}` : 'https://claude.ai/new';
+    if (target === 'gemini') url = 'https://gemini.google.com/app';
+    window.open(url, '_blank', 'noopener,noreferrer');
+    showToast('Prompt copied to clipboard! Paste it into the chat tab.');
+  }
+
+  async function handleFinishReply() {
+    const reply = replyBox.value.trim();
+    if (!reply) {
+      showToast('Please paste the AI reply into the box first.');
+      replyBox.focus();
+      return;
+    }
+    closePromptKitModal();
+    const cleaned = TextHumanizer.cleanAIOutput(reply);
+    const polished = TextHumanizer.polishText(cleaned, currentTone);
+
+    currentSourceText = inputEl.value.trim();
+    currentOutputClean = polished;
+
+    outputPlaceholder.classList.add('hidden');
+    outputContent.textContent = polished;
+    outputDiff.innerHTML = generateDiffMarkup(currentSourceText, polished);
+
+    if (isDiffActive) {
+      outputContent.classList.add('hidden');
+      outputDiff.classList.remove('hidden');
+    } else {
+      outputDiff.classList.add('hidden');
+      outputContent.classList.remove('hidden');
+    }
+
+    statusTag.classList.remove('hidden');
+    statusTag.classList.add('flex');
+    statusTagText.textContent = 'Verifying ZeroGPT...';
+    const zg = await TextHumanizer.checkZeroGPTLive(polished);
+    updateDetectorBadge(zg);
+    statusTag.classList.add('hidden');
+    statusTag.classList.remove('flex');
+
+    showToast('Prompt Kit output applied and polished.');
+  }
+
+  // ── Event Listeners Setup ───────────────────────────────────────────────────
+  function initEvents() {
+    // Input typing
+    inputEl.addEventListener('input', handleInputUpdate);
+
+    // Tone switcher
+    toneNaturalBtn.addEventListener('click', () => setTone('natural'));
+    toneAcademicBtn.addEventListener('click', () => setTone('academic'));
+
+    // Engine switcher
+    engineBtnLocal.addEventListener('click', () => setEngine('local'));
+    engineBtnPrompt.addEventListener('click', () => setEngine('prompt'));
+    engineBtnAi.addEventListener('click', () => setEngine('ai'));
+    enginePill.addEventListener('click', openSettingsModal);
+
+    // Modal engine options
+    document.getElementById('modal-opt-local')?.addEventListener('click', () => setEngine('local'));
+    document.getElementById('modal-opt-prompt')?.addEventListener('click', () => setEngine('prompt'));
+    document.getElementById('modal-opt-ai')?.addEventListener('click', () => setEngine('ai'));
+
+    // Provider options
+    provGeminiBtn.addEventListener('click', () => updateProviderSelectionUI('gemini'));
+    provGroqBtn.addEventListener('click', () => updateProviderSelectionUI('groq'));
+
+    // Main buttons
+    convertBtn.addEventListener('click', () => runConversion(false));
+    refineBtn.addEventListener('click', () => runConversion(true));
+    diffBtn.addEventListener('click', toggleDiff);
+    copyBtn.addEventListener('click', copyOutput);
+    verifyBtn.addEventListener('click', runVerifyLive);
+    exportPdfBtn.addEventListener('click', exportOutput);
+    openZeroGptSiteBtn.addEventListener('click', openZeroGptSite);
+
+    btnLoadSample.addEventListener('click', () => loadSampleText());
+    btnClearInput.addEventListener('click', clearInput);
+
+    // Header nav buttons
+    document.getElementById('nav-converter')?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    document.getElementById('nav-benchmarks')?.addEventListener('click', openBenchmarksModal);
+    document.getElementById('nav-promptkit')?.addEventListener('click', () => openPromptKitModal());
+    document.getElementById('nav-settings')?.addEventListener('click', openSettingsModal);
+    document.getElementById('btn-header-settings')?.addEventListener('click', openSettingsModal);
+
+    // Footer nav
+    document.getElementById('footer-benchmarks')?.addEventListener('click', openBenchmarksModal);
+    document.getElementById('footer-promptkit')?.addEventListener('click', () => openPromptKitModal());
+
+    // Settings modal events
+    btnCloseSettings.addEventListener('click', closeSettingsModal);
+    btnSaveSettings.addEventListener('click', handleSaveSettings);
+    btnTestKey.addEventListener('click', handleTestKey);
+    btnClearKey.addEventListener('click', handleClearKey);
+    modalSettings.addEventListener('click', e => { if (e.target === modalSettings) closeSettingsModal(); });
+
+    // Prompt Kit modal events
+    btnClosePromptKit.addEventListener('click', closePromptKitModal);
+    btnCopyPromptKit.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(promptKitTextarea.value);
+      showToast('Prompt copied to clipboard!');
+    });
+    btnOpenChatGPT.addEventListener('click', () => copyAndOpenAiChat('chatgpt'));
+    btnOpenClaude.addEventListener('click', () => copyAndOpenAiChat('claude'));
+    btnOpenGemini.addEventListener('click', () => copyAndOpenAiChat('gemini'));
+    btnFinishReply.addEventListener('click', handleFinishReply);
+    modalPromptKit.addEventListener('click', e => { if (e.target === modalPromptKit) closePromptKitModal(); });
+
+    // Benchmarks modal events
+    btnCloseBenchmarks.addEventListener('click', closeBenchmarksModal);
+    modalBenchmarks.addEventListener('click', e => { if (e.target === modalBenchmarks) closeBenchmarksModal(); });
+
+    // Global Keybindings
+    document.addEventListener('keydown', e => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        runConversion(false);
+      }
+      if (e.key === 'Escape') {
+        closeSettingsModal();
+        closePromptKitModal();
+        closeBenchmarksModal();
+      }
+    });
+  }
+
+  // ── Initialization ──────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    initEvents();
+    setTone(currentTone);
+    setEngine(currentEngine);
+    updateProviderSelectionUI(selectedProvider);
+
+    // Pre-populate with first sample for immediate instant testing
+    if (!inputEl.value.trim()) {
+      inputEl.value = BENCHMARKS[0].raw_ai;
+      handleInputUpdate();
+    }
+  });
 
 })();
