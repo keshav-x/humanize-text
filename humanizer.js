@@ -8896,6 +8896,16 @@ function polishText(rawText, style = 'natural') {
 
 async function humanizeText(rawText, style = 'natural', options = {}) {
   const engine = options.engine || 'local';
+  if (engine === 'localllm') {
+    const raw = await callLocalLLMAPI({
+      endpoint: options.localEndpoint || 'http://localhost:11434',
+      model: options.localModel || 'llama3.2',
+      runner: options.localRunner || 'auto',
+      text: rawText,
+      style
+    });
+    return polishText(raw, style);
+  }
   if (engine === 'ai' && options.apiKey) {
     const raw = options.provider === 'gemini'
       ? await callGeminiAPI(options.apiKey, options.model || 'gemini-2.0-flash', rawText, style)
@@ -9145,6 +9155,187 @@ async function callGroqAPI(apiKey, text, style) {
   return cleanAIOutput(content);
 }
 
+// ── 14b. Local LLM Runner Callers (Ollama, LM Studio, LocalAI) ───────────────
+async function fetchLocalModels(endpoint = 'http://localhost:11434') {
+  const cleanEndpoint = (endpoint || 'http://localhost:11434').replace(/\/+$/, '');
+  
+  // 1. Direct browser probe to Ollama /api/tags
+  try {
+    const res = await fetch(`${cleanEndpoint}/api/tags`, { method: 'GET' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.models && Array.isArray(data.models)) {
+        return {
+          runner: 'ollama',
+          models: data.models.map(m => ({ id: m.name, name: m.name, size: m.size }))
+        };
+      }
+    }
+  } catch (e) {}
+
+  // 2. Direct browser probe to OpenAI-compatible /v1/models (LM Studio)
+  try {
+    const lmUrl = cleanEndpoint.endsWith('/v1') ? `${cleanEndpoint}/models` : `${cleanEndpoint}/v1/models`;
+    const res = await fetch(lmUrl, { method: 'GET' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.data && Array.isArray(data.data)) {
+        return {
+          runner: 'lmstudio',
+          models: data.data.map(m => ({ id: m.id, name: m.id }))
+        };
+      }
+    }
+  } catch (e) {}
+
+  // 3. Fallback to local server proxy relay (bypasses browser CORS restrictions)
+  try {
+    const proxyBase = typeof window !== 'undefined' ? '' : 'http://localhost:3000';
+    const res = await fetch(`${proxyBase}/api/local-llm/models?endpoint=${encodeURIComponent(cleanEndpoint)}`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.models) return data;
+    }
+  } catch (e) {}
+
+  return { runner: 'unknown', models: [] };
+}
+
+async function callLocalLLMAPI(options) {
+  const {
+    endpoint = 'http://localhost:11434',
+    model = 'llama3.2',
+    runner = 'auto',
+    text,
+    style = 'natural'
+  } = options;
+
+  const promptText = buildPrompt(text, style);
+  const cleanEndpoint = endpoint.replace(/\/+$/, '');
+  const isOllama = runner === 'ollama' || (runner === 'auto' && cleanEndpoint.includes('11434'));
+
+  const messages = [
+    {
+      role: 'system',
+      content: 'You are an expert human author and cadence rewriter. Follow the exact instructions, facts, and structure specified by the user.'
+    },
+    { role: 'user', content: promptText }
+  ];
+
+  const extractText = (data) => {
+    if (!data) return null;
+    if (data.message?.content && data.message.content.trim()) return data.message.content.trim();
+    if (data.choices?.[0]?.message?.content && data.choices[0].message.content.trim()) return data.choices[0].message.content.trim();
+    if (data.response && data.response.trim()) return data.response.trim();
+    if (data.content && data.content.trim()) return data.content.trim();
+
+    // Support reasoning/thinking models (e.g. Qwen 3.5, DeepSeek-R1) where answer is inside thinking or before length cut
+    const think = data.message?.thinking || data.thinking;
+    if (think && think.trim()) {
+      const cleanThink = think.trim();
+      const match = cleanThink.match(/(?:(?:Version|Option|Rewrite|Draft|Output|Final|Rewritten Text|Human Text)[^\n]*:\s*([^\n]+))/gi);
+      if (match && match.length > 0) {
+        const lastLine = match[match.length - 1].replace(/^(?:Version|Option|Rewrite|Draft|Output|Final|Rewritten Text|Human Text)[^\n]*:\s*/i, '').trim();
+        if (lastLine) return lastLine.replace(/^["']|["']$/g, '');
+      }
+      const paras = cleanThink.split(/\n\s*\n+/);
+      const lastPara = paras[paras.length - 1].trim();
+      if (lastPara && !lastPara.startsWith('#') && !lastPara.startsWith('Thinking Process')) {
+        return lastPara.replace(/^[*-\s]+/, '').replace(/^["']|["']$/g, '');
+      }
+    }
+    return null;
+  };
+
+  // Attempt 1: Direct fetch to local runner
+  try {
+    if (isOllama) {
+      // 1a. Try Ollama /api/chat
+      try {
+        const chatRes = await fetch(`${cleanEndpoint}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model,
+            messages,
+            stream: false,
+            options: { temperature: 0.85, top_p: 0.9 }
+          })
+        });
+        if (chatRes.ok) {
+          const json = await chatRes.json();
+          const content = extractText(json);
+          if (content) return cleanAIOutput(content);
+        }
+      } catch (chatErr) {}
+
+      // 1b. Try Ollama /api/generate (ideal for non-chat / raw completion / thinking models)
+      const genRes = await fetch(`${cleanEndpoint}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          prompt: promptText,
+          stream: false,
+          options: { temperature: 0.85, top_p: 0.9 }
+        })
+      });
+      if (genRes.ok) {
+        const json = await genRes.json();
+        const content = extractText(json);
+        if (content) return cleanAIOutput(content);
+      }
+    } else {
+      // OpenAI-compatible /v1/chat/completions (LM Studio, LocalAI, vLLM)
+      const lmUrl = cleanEndpoint.endsWith('/v1') ? `${cleanEndpoint}/chat/completions` : `${cleanEndpoint}/v1/chat/completions`;
+      const directRes = await fetch(lmUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.85
+        })
+      });
+      if (directRes.ok) {
+        const json = await directRes.json();
+        const content = extractText(json);
+        if (content) return cleanAIOutput(content);
+      }
+    }
+  } catch (directErr) {
+    // Direct fetch failed (CORS or network policy), fall back to proxy
+  }
+
+  // Attempt 2: Local server proxy relay (bypasses browser CORS restrictions)
+  const proxyBase = typeof window !== 'undefined' ? '' : 'http://localhost:3000';
+  const proxyRes = await fetch(`${proxyBase}/api/local-llm/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      endpoint: cleanEndpoint,
+      model,
+      runner: isOllama ? 'ollama' : 'openai-compatible',
+      prompt: promptText,
+      messages,
+      temperature: 0.85
+    })
+  });
+
+  if (!proxyRes.ok) {
+    const errData = await proxyRes.json().catch(() => ({}));
+    throw new Error(errData.error || `Local LLM failed (HTTP ${proxyRes.status}). Ensure Ollama ('ollama serve') or LM Studio is running.`);
+  }
+
+  const json = await proxyRes.json();
+  const content = extractText(json);
+  if (!content) {
+    throw new Error(`Empty response received from Local LLM (${model}). Please verify the model is loaded.`);
+  }
+
+  return cleanAIOutput(content);
+}
+
 // Cleans chat-style wrappers from pasted/API replies.
 function cleanAIOutput(output) {
   let cleaned = (output || '').trim();
@@ -9152,6 +9343,9 @@ function cleanAIOutput(output) {
   cleaned = cleaned.replace(/^"""\s*|\s*"""$/g, '');
   cleaned = cleaned.replace(/^"([\s\S]*)"$/, '$1');
   cleaned = cleanMarkdown(cleaned);
+  // Strip trailing metadata or word counts (e.g. `." (11 words).` or `(about 45 words)`)
+  cleaned = cleaned.replace(/["']?\s*\((?:about\s+)?\d+\s*words?\)\.?$/i, '');
+  cleaned = cleaned.replace(/^["']|["']$/g, '');
   return cleaned.trim();
 }
 
@@ -9169,6 +9363,8 @@ const _API = {
   checkZeroGPTLive,
   callGeminiAPI,
   callGroqAPI,
+  callLocalLLMAPI,
+  fetchLocalModels,
   verifyAnchors,
   collectAnchors,
   stripAITells,

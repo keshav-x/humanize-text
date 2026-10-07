@@ -155,14 +155,18 @@
 
             <!-- Segmented Engine Switcher -->
             <div aria-label="Engine selector" class="hidden sm:flex items-center gap-1 bg-surface-container-lowest p-1 border border-surface-container-highest">
-              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors bg-surface-container text-primary font-medium" id="engine-btn-local" type="button">
-                Local (Free)
+              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors bg-surface-container text-primary font-medium" id="engine-btn-local" type="button" title="Fast rule-based syntax & cliché restructuring (100% offline)">
+                Heuristics
               </button>
-              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors text-on-surface-variant hover:text-on-surface" id="engine-btn-prompt" type="button">
+              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors text-on-surface-variant hover:text-on-surface flex items-center gap-1.5" id="engine-btn-localllm" type="button" title="Private local neural model running on your machine via Ollama or LM Studio">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
+                <span>Local LLM</span>
+              </button>
+              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors text-on-surface-variant hover:text-on-surface" id="engine-btn-prompt" type="button" title="Adversarial humanizing prompt to copy into ChatGPT / Claude">
                 Prompt Kit
               </button>
-              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors text-on-surface-variant hover:text-on-surface" id="engine-btn-ai" type="button">
-                AI Engine
+              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors text-on-surface-variant hover:text-on-surface" id="engine-btn-ai" type="button" title="Cloud API with your Gemini / Groq key">
+                Cloud AI
               </button>
             </div>
           </div>
@@ -395,23 +399,99 @@
         </button>
       </div>
 
-      <div class="p-6 flex flex-col gap-5 overflow-y-auto">
+      <div class="p-6 flex flex-col gap-5 overflow-y-auto max-h-[70vh]">
         <!-- Engine Mode Selection -->
         <div class="flex flex-col gap-2">
           <label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Transformation Mode</label>
-          <div class="grid grid-cols-3 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <button class="p-3 border border-primary bg-surface-container-low text-primary text-left text-sm font-medium transition-colors" id="modal-opt-local" type="button">
-              <div class="font-label-sm">Local Free</div>
-              <div class="text-[11px] text-on-surface-variant mt-0.5">100% offline, zero-network</div>
+              <div class="font-label-sm">Heuristics</div>
+              <div class="text-[11px] text-on-surface-variant mt-0.5">Rule-based, 0-network</div>
+            </button>
+            <button class="p-3 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-sm font-medium transition-colors" id="modal-opt-localllm" type="button">
+              <div class="font-label-sm flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Local LLM</div>
+              <div class="text-[11px] text-on-surface-variant mt-0.5">Ollama / LM Studio</div>
             </button>
             <button class="p-3 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-sm font-medium transition-colors" id="modal-opt-prompt" type="button">
               <div class="font-label-sm">Prompt Kit</div>
-              <div class="text-[11px] text-on-surface-variant mt-0.5">Copy prompt for ChatGPT</div>
+              <div class="text-[11px] text-on-surface-variant mt-0.5">Copy for ChatGPT / Claude</div>
             </button>
             <button class="p-3 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-sm font-medium transition-colors" id="modal-opt-ai" type="button">
-              <div class="font-label-sm">AI Engine</div>
-              <div class="text-[11px] text-on-surface-variant mt-0.5">Own Gemini / Groq key</div>
+              <div class="font-label-sm">Cloud AI API</div>
+              <div class="text-[11px] text-on-surface-variant mt-0.5">Gemini / Groq key</div>
             </button>
+          </div>
+        </div>
+
+        <!-- Local LLM Configuration (for Ollama, LM Studio, etc.) -->
+        <div class="hidden flex-col gap-4 p-4 bg-surface-container-lowest border border-surface-container-highest" id="group-local-llm">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+              <span class="font-label-sm text-label-sm text-primary uppercase font-medium">Local Runner Configuration</span>
+            </div>
+            <span class="text-[11px] text-on-surface-variant font-mono">100% Private • Free • Zero Telemetry</span>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Runner Preset</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button class="p-2.5 border border-primary bg-surface-container-low text-primary text-left text-xs font-medium transition-colors" id="runner-ollama" type="button">
+                <div class="font-label-sm">Ollama</div>
+                <div class="text-[10px] text-on-surface-variant mt-0.5">localhost:11434</div>
+              </button>
+              <button class="p-2.5 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-xs font-medium transition-colors" id="runner-lmstudio" type="button">
+                <div class="font-label-sm">LM Studio</div>
+                <div class="text-[10px] text-on-surface-variant mt-0.5">localhost:1234/v1</div>
+              </button>
+              <button class="p-2.5 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-xs font-medium transition-colors" id="runner-custom" type="button">
+                <div class="font-label-sm">Custom URL</div>
+                <div class="text-[10px] text-on-surface-variant mt-0.5">vLLM / llama.cpp / LocalAI</div>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="font-label-sm text-label-sm text-on-surface-variant uppercase" for="input-local-endpoint">Server Endpoint</label>
+            <input 
+              class="h-10 px-3 bg-surface-container-low border border-surface-container-highest text-primary font-mono text-xs placeholder-on-surface-variant/40"
+              id="input-local-endpoint"
+              placeholder="http://localhost:11434"
+              value="http://localhost:11434"
+              type="text"
+            />
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <label class="font-label-sm text-label-sm text-on-surface-variant uppercase" for="input-local-model">Model Name</label>
+              <button class="h-6 px-2.5 bg-surface-container-high border border-outline-variant hover:border-primary text-primary font-label-sm text-[11px] flex items-center gap-1 transition-colors cursor-pointer" id="btn-detect-local-models" type="button">
+                <span class="material-symbols-outlined text-[13px]">sync</span>
+                <span>Auto-Detect Models</span>
+              </button>
+            </div>
+            <input 
+              class="h-10 px-3 bg-surface-container-low border border-surface-container-highest text-primary font-mono text-xs placeholder-on-surface-variant/40"
+              id="input-local-model"
+              placeholder="llama3.2, mistral, qwen2.5..."
+              value="llama3.2"
+              type="text"
+            />
+            <div class="flex flex-wrap items-center gap-1.5 pt-1" id="local-model-chips">
+              <span class="text-[11px] text-on-surface-variant mr-1">Quick pick:</span>
+              <button class="px-2 py-0.5 text-[11px] border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:border-outline font-mono transition-colors chip-model-btn" type="button" data-model="llama3.2">llama3.2</button>
+              <button class="px-2 py-0.5 text-[11px] border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:border-outline font-mono transition-colors chip-model-btn" type="button" data-model="llama3.1">llama3.1</button>
+              <button class="px-2 py-0.5 text-[11px] border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:border-outline font-mono transition-colors chip-model-btn" type="button" data-model="mistral">mistral</button>
+              <button class="px-2 py-0.5 text-[11px] border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:border-outline font-mono transition-colors chip-model-btn" type="button" data-model="qwen2.5:7b">qwen2.5:7b</button>
+            </div>
+          </div>
+
+          <!-- Diagnostic feedback banner -->
+          <div class="p-3 bg-surface-container-low border border-surface-container-highest text-xs flex items-start gap-2.5" id="box-local-llm-diagnostic">
+            <span class="material-symbols-outlined text-[16px] text-on-surface-variant mt-0.5 shrink-0" id="icon-local-diagnostic">info</span>
+            <div class="flex-1 text-[11px] leading-relaxed text-on-surface-variant" id="text-local-diagnostic">
+              Ollama runs at <code class="text-primary font-mono">http://localhost:11434</code>. Run <code class="text-primary font-mono">ollama run llama3.2</code> in your terminal to start Ollama and download the model if needed. 100% private, free, and runs on your GPU.
+            </div>
           </div>
         </div>
 

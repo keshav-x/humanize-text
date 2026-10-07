@@ -13,6 +13,9 @@
   const STORAGE_KEY_MODEL = 'texthuman_model';
   const STORAGE_KEY_ENGINE = 'texthuman_engine';
   const STORAGE_KEY_STYLE = 'texthuman_style';
+  const STORAGE_KEY_LOCAL_ENDPOINT = 'texthuman_local_endpoint';
+  const STORAGE_KEY_LOCAL_MODEL = 'texthuman_local_model';
+  const STORAGE_KEY_LOCAL_RUNNER = 'texthuman_local_runner';
 
   // ── Benchmark Test Cases ───────────────────────────────────────────────────
   const BENCHMARKS = [
@@ -78,6 +81,9 @@
   let currentTone = localStorage.getItem(STORAGE_KEY_STYLE) || 'natural';
   let currentEngine = localStorage.getItem(STORAGE_KEY_ENGINE) || 'local';
   let selectedProvider = localStorage.getItem(STORAGE_KEY_PROVIDER) || 'gemini';
+  let currentLocalEndpoint = localStorage.getItem(STORAGE_KEY_LOCAL_ENDPOINT) || 'http://localhost:11434';
+  let currentLocalModel = localStorage.getItem(STORAGE_KEY_LOCAL_MODEL) || 'llama3.2';
+  let currentLocalRunner = localStorage.getItem(STORAGE_KEY_LOCAL_RUNNER) || 'ollama';
   let isDiffActive = false;
   let currentSourceText = '';
   let currentOutputClean = '';
@@ -96,10 +102,24 @@
   const activeToneLabel = document.getElementById('active-tone-label');
 
   const engineBtnLocal = document.getElementById('engine-btn-local');
+  const engineBtnLocalLlm = document.getElementById('engine-btn-localllm');
   const engineBtnPrompt = document.getElementById('engine-btn-prompt');
   const engineBtnAi = document.getElementById('engine-btn-ai');
   const headerEngineLabel = document.getElementById('header-engine-label');
   const enginePill = document.getElementById('btn-engine-pill');
+
+  // Local LLM Modal Elements
+  const modalOptLocalLlm = document.getElementById('modal-opt-localllm');
+  const groupLocalLlm = document.getElementById('group-local-llm');
+  const runnerOllamaBtn = document.getElementById('runner-ollama');
+  const runnerLmStudioBtn = document.getElementById('runner-lmstudio');
+  const runnerCustomBtn = document.getElementById('runner-custom');
+  const inputLocalEndpoint = document.getElementById('input-local-endpoint');
+  const inputLocalModel = document.getElementById('input-local-model');
+  const btnDetectLocalModels = document.getElementById('btn-detect-local-models');
+  const localModelChips = document.getElementById('local-model-chips');
+  const textLocalDiagnostic = document.getElementById('text-local-diagnostic');
+  const iconLocalDiagnostic = document.getElementById('icon-local-diagnostic');
 
   const convertBtn = document.getElementById('convert-btn');
   const convertBtnLabel = document.getElementById('convert-btn-label');
@@ -275,6 +295,7 @@
 
     const buttons = [
       { id: 'local', btn: engineBtnLocal },
+      { id: 'localllm', btn: engineBtnLocalLlm },
       { id: 'prompt', btn: engineBtnPrompt },
       { id: 'ai', btn: engineBtnAi }
     ];
@@ -282,20 +303,22 @@
     buttons.forEach(b => {
       if (b.btn) {
         if (b.id === engine) {
-          b.btn.className = 'px-3 py-1.5 font-label-sm text-label-sm transition-colors bg-surface-container text-primary font-medium';
+          b.btn.className = 'px-3 py-1.5 font-label-sm text-label-sm transition-colors bg-surface-container text-primary font-medium flex items-center gap-1.5';
         } else {
-          b.btn.className = 'px-3 py-1.5 font-label-sm text-label-sm transition-colors text-on-surface-variant hover:text-on-surface';
+          b.btn.className = 'px-3 py-1.5 font-label-sm text-label-sm transition-colors text-on-surface-variant hover:text-on-surface flex items-center gap-1.5';
         }
       }
     });
 
     if (engine === 'local') {
-      headerEngineLabel.textContent = 'Local Engine';
+      headerEngineLabel.textContent = 'Heuristics (Offline)';
+    } else if (engine === 'localllm') {
+      headerEngineLabel.textContent = `Local: ${currentLocalModel}`;
     } else if (engine === 'prompt') {
       headerEngineLabel.textContent = 'Prompt Kit';
     } else {
       const key = getApiKey();
-      headerEngineLabel.textContent = key ? (selectedProvider === 'gemini' ? 'Gemini 2.0' : 'Groq 70B') : 'AI Engine (Needs Key)';
+      headerEngineLabel.textContent = key ? (selectedProvider === 'gemini' ? 'Gemini 2.0' : 'Groq 70B') : 'Cloud AI (Needs Key)';
     }
 
     updateSettingsModalEngineState();
@@ -304,6 +327,7 @@
   function updateSettingsModalEngineState() {
     const opts = [
       { id: 'local', el: document.getElementById('modal-opt-local') },
+      { id: 'localllm', el: document.getElementById('modal-opt-localllm') },
       { id: 'prompt', el: document.getElementById('modal-opt-prompt') },
       { id: 'ai', el: document.getElementById('modal-opt-ai') }
     ];
@@ -317,6 +341,23 @@
         }
       }
     });
+
+    const groupAi = document.getElementById('group-ai-provider');
+    const groupKey = document.getElementById('group-api-key');
+
+    if (currentEngine === 'localllm') {
+      if (groupLocalLlm) groupLocalLlm.classList.remove('hidden');
+      if (groupAi) groupAi.classList.add('hidden');
+      if (groupKey) groupKey.classList.add('hidden');
+    } else if (currentEngine === 'ai') {
+      if (groupLocalLlm) groupLocalLlm.classList.add('hidden');
+      if (groupAi) groupAi.classList.remove('hidden');
+      if (groupKey) groupKey.classList.remove('hidden');
+    } else {
+      if (groupLocalLlm) groupLocalLlm.classList.add('hidden');
+      if (groupAi) groupAi.classList.add('hidden');
+      if (groupKey) groupKey.classList.add('hidden');
+    }
   }
 
   // ── Input Live Counters ─────────────────────────────────────────────────────
@@ -423,7 +464,17 @@
     try {
       let resultText = '';
 
-      if (currentEngine === 'ai' && !isRefinePass) {
+      if (currentEngine === 'localllm' && !isRefinePass) {
+        statusTagText.textContent = `Running Local LLM (${currentLocalModel})...`;
+        const raw = await TextHumanizer.callLocalLLMAPI({
+          endpoint: currentLocalEndpoint,
+          model: currentLocalModel,
+          runner: currentLocalRunner,
+          text: rawInput,
+          style: currentTone
+        });
+        resultText = TextHumanizer.polishText(raw, currentTone);
+      } else if (currentEngine === 'ai' && !isRefinePass) {
         const model = selectedProvider === 'gemini' ? 'gemini-2.0-flash' : 'llama-3.3-70b-versatile';
         const raw = selectedProvider === 'gemini'
           ? await TextHumanizer.callGeminiAPI(key, model, rawInput, currentTone)
@@ -556,6 +607,9 @@
   // ── Modal Handling ──────────────────────────────────────────────────────────
   function openSettingsModal() {
     inputApiKey.value = getApiKey();
+    if (inputLocalEndpoint) inputLocalEndpoint.value = currentLocalEndpoint;
+    if (inputLocalModel) inputLocalModel.value = currentLocalModel;
+    setLocalRunnerUI(currentLocalRunner);
     updateProviderSelectionUI(selectedProvider);
     updateSettingsModalEngineState();
     modalSettings.classList.add('active');
@@ -563,6 +617,113 @@
 
   function closeSettingsModal() {
     modalSettings.classList.remove('active');
+  }
+
+  function setLocalRunnerUI(runner) {
+    currentLocalRunner = runner;
+    localStorage.setItem(STORAGE_KEY_LOCAL_RUNNER, runner);
+
+    const runners = [
+      {
+        id: 'ollama',
+        btn: runnerOllamaBtn,
+        defaultUrl: 'http://localhost:11434',
+        defaultModel: 'llama3.2',
+        desc: 'Ollama runs at <code class="text-primary font-mono">http://localhost:11434</code>. Run <code class="text-primary font-mono">ollama run llama3.2</code> in your terminal to start Ollama and download the model if needed. 100% private, free, and runs on your GPU.'
+      },
+      {
+        id: 'lmstudio',
+        btn: runnerLmStudioBtn,
+        defaultUrl: 'http://localhost:1234/v1',
+        defaultModel: 'default',
+        desc: "LM Studio runs an OpenAI-compatible server at <code class=\"text-primary font-mono\">http://localhost:1234/v1</code>. Start the local server in LM Studio's Developer tab. 100% private and GPU accelerated."
+      },
+      {
+        id: 'custom',
+        btn: runnerCustomBtn,
+        defaultUrl: 'http://localhost:8000/v1',
+        defaultModel: '',
+        desc: 'Connect any local OpenAI-compatible endpoint (vLLM, llama.cpp, LocalAI, text-generation-webui). Enter the full base URL below.'
+      }
+    ];
+
+    runners.forEach(r => {
+      if (r.btn) {
+        if (r.id === runner) {
+          r.btn.className = 'p-2.5 border border-primary bg-surface-container-low text-primary text-left text-xs font-medium transition-colors';
+        } else {
+          r.btn.className = 'p-2.5 border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary text-left text-xs font-medium transition-colors';
+        }
+      }
+    });
+
+    const activeObj = runners.find(r => r.id === runner);
+    if (activeObj && textLocalDiagnostic) {
+      textLocalDiagnostic.innerHTML = activeObj.desc;
+    }
+  }
+
+  async function handleDetectLocalModels() {
+    if (!btnDetectLocalModels) return;
+    const ep = (inputLocalEndpoint?.value || currentLocalEndpoint || 'http://localhost:11434').trim();
+    btnDetectLocalModels.disabled = true;
+    btnDetectLocalModels.innerHTML = '<span class="material-symbols-outlined text-[13px] animate-spin">sync</span><span>Detecting...</span>';
+
+    if (textLocalDiagnostic) {
+      textLocalDiagnostic.innerHTML = `Querying local runner at <code class="text-primary font-mono">${escapeHtml(ep)}</code>...`;
+    }
+    if (iconLocalDiagnostic) {
+      iconLocalDiagnostic.textContent = 'sync';
+      iconLocalDiagnostic.className = 'material-symbols-outlined text-[16px] text-primary mt-0.5 shrink-0 animate-spin';
+    }
+
+    try {
+      const data = await TextHumanizer.fetchLocalModels(ep);
+      const models = data.models || [];
+      if (models.length > 0) {
+        if (localModelChips) {
+          localModelChips.innerHTML = `
+            <span class="text-[11px] text-on-surface-variant mr-1">Detected (${models.length}):</span>
+            ${models.map(m => `<button class="px-2 py-0.5 text-[11px] border border-surface-container-highest bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:border-primary font-mono transition-colors chip-model-btn cursor-pointer" type="button" data-model="${escapeHtml(m.id || m.name)}">${escapeHtml(m.id || m.name)}</button>`).join(' ')}
+          `;
+        }
+        if (inputLocalModel && (!inputLocalModel.value || inputLocalModel.value === 'llama3.2')) {
+          const firstId = models[0].id || models[0].name;
+          inputLocalModel.value = firstId;
+          currentLocalModel = firstId;
+          localStorage.setItem(STORAGE_KEY_LOCAL_MODEL, currentLocalModel);
+        }
+        if (textLocalDiagnostic) {
+          textLocalDiagnostic.innerHTML = `<span class="text-emerald-400 font-medium">Connected successfully!</span> Found ${models.length} model(s) on ${data.runner || 'runner'} (${ep}). Click any chip to select.`;
+        }
+        if (iconLocalDiagnostic) {
+          iconLocalDiagnostic.textContent = 'check_circle';
+          iconLocalDiagnostic.className = 'material-symbols-outlined text-[16px] text-emerald-400 mt-0.5 shrink-0';
+        }
+        showToast(`Discovered ${models.length} local model(s)!`);
+      } else {
+        if (textLocalDiagnostic) {
+          textLocalDiagnostic.innerHTML = `<span class="text-amber-400 font-medium">No models found at ${escapeHtml(ep)}.</span> Ensure your runner is running and has models downloaded. For Ollama: run <code class="text-primary font-mono">ollama run llama3.2</code> in PowerShell.`;
+        }
+        if (iconLocalDiagnostic) {
+          iconLocalDiagnostic.textContent = 'warning';
+          iconLocalDiagnostic.className = 'material-symbols-outlined text-[16px] text-amber-400 mt-0.5 shrink-0';
+        }
+        showToast('Runner reached, but no models found.');
+      }
+    } catch (err) {
+      if (textLocalDiagnostic) {
+        textLocalDiagnostic.innerHTML = `<span class="text-rose-400 font-medium">Could not reach runner at ${escapeHtml(ep)}.</span> Start Ollama or LM Studio first. For Ollama: open PowerShell and run <code class="text-primary font-mono">ollama serve</code>.`;
+      }
+      if (iconLocalDiagnostic) {
+        iconLocalDiagnostic.textContent = 'error';
+        iconLocalDiagnostic.className = 'material-symbols-outlined text-[16px] text-rose-400 mt-0.5 shrink-0';
+      }
+      showToast('Local runner offline or unreachable.');
+    } finally {
+      btnDetectLocalModels.disabled = false;
+      btnDetectLocalModels.innerHTML = '<span class="material-symbols-outlined text-[13px]">sync</span><span>Auto-Detect Models</span>';
+    }
   }
 
   function updateProviderSelectionUI(prov) {
@@ -639,31 +800,68 @@
     const key = inputApiKey.value.trim();
     if (key) {
       localStorage.setItem(STORAGE_KEY_API_KEY, key);
-      setEngine('ai');
-      showToast('API Key saved. AI Engine activated.');
+    }
+    if (inputLocalEndpoint) {
+      currentLocalEndpoint = inputLocalEndpoint.value.trim() || 'http://localhost:11434';
+      localStorage.setItem(STORAGE_KEY_LOCAL_ENDPOINT, currentLocalEndpoint);
+    }
+    if (inputLocalModel) {
+      currentLocalModel = inputLocalModel.value.trim() || 'llama3.2';
+      localStorage.setItem(STORAGE_KEY_LOCAL_MODEL, currentLocalModel);
+    }
+
+    if (currentEngine === 'localllm') {
+      setEngine('localllm');
+      showToast(`Local LLM active (${currentLocalModel}). Zero network cost.`);
+    } else if (currentEngine === 'ai') {
+      if (key) {
+        setEngine('ai');
+        showToast('Cloud AI API Key saved and active.');
+      } else {
+        showToast('Please enter an API key for Cloud AI.');
+        return;
+      }
     } else {
+      setEngine(currentEngine);
       showToast('Settings saved.');
     }
     closeSettingsModal();
   }
 
   async function handleTestKey() {
-    const key = inputApiKey.value.trim();
-    if (!key) {
-      showToast('Enter an API key first.');
-      return;
-    }
     btnTestKey.disabled = true;
     btnTestKey.textContent = 'Testing...';
+
     try {
-      if (selectedProvider === 'gemini') {
-        await TextHumanizer.callGeminiAPI(key, 'gemini-2.0-flash', 'Ping test.', 'natural');
+      if (currentEngine === 'localllm') {
+        const ep = (inputLocalEndpoint?.value || currentLocalEndpoint || 'http://localhost:11434').trim();
+        const mdl = (inputLocalModel?.value || currentLocalModel || 'llama3.2').trim();
+        await TextHumanizer.callLocalLLMAPI({
+          endpoint: ep,
+          model: mdl,
+          runner: currentLocalRunner,
+          text: 'Respond with only the single word: READY',
+          style: 'natural'
+        });
+        showToast(`Local LLM (${mdl}) connected & responsive!`);
+        if (textLocalDiagnostic) {
+          textLocalDiagnostic.innerHTML = `<span class="text-emerald-400 font-medium">Ping test passed!</span> Model <code class="text-primary font-mono">${escapeHtml(mdl)}</code> replied successfully.`;
+        }
       } else {
-        await TextHumanizer.callGroqAPI(key, 'Ping test.', 'natural');
+        const key = inputApiKey.value.trim();
+        if (!key) {
+          showToast('Enter an API key first.');
+          return;
+        }
+        if (selectedProvider === 'gemini') {
+          await TextHumanizer.callGeminiAPI(key, 'gemini-2.0-flash', 'Ping test.', 'natural');
+        } else {
+          await TextHumanizer.callGroqAPI(key, 'Ping test.', 'natural');
+        }
+        showToast('Cloud API Key successfully verified!');
       }
-      showToast('API Key successfully verified!');
     } catch (err) {
-      showToast(`Key error: ${err.message || 'Connection failed'}`);
+      showToast(`Test error: ${err.message || 'Connection failed'}`);
     } finally {
       btnTestKey.disabled = false;
       btnTestKey.textContent = 'Test Connection';
@@ -674,7 +872,7 @@
     localStorage.removeItem(STORAGE_KEY_API_KEY);
     inputApiKey.value = '';
     setEngine('local');
-    showToast('API Key removed. Switched to Local Free Engine.');
+    showToast('API Key removed. Switched to Heuristics Engine.');
   }
 
   // ── Prompt Kit Modal Direct Jump ────────────────────────────────────────────
@@ -737,19 +935,68 @@
     toneAcademicBtn.addEventListener('click', () => setTone('academic'));
 
     // Engine switcher
-    engineBtnLocal.addEventListener('click', () => setEngine('local'));
-    engineBtnPrompt.addEventListener('click', () => setEngine('prompt'));
-    engineBtnAi.addEventListener('click', () => setEngine('ai'));
-    enginePill.addEventListener('click', openSettingsModal);
+    engineBtnLocal?.addEventListener('click', () => setEngine('local'));
+    engineBtnLocalLlm?.addEventListener('click', () => setEngine('localllm'));
+    engineBtnPrompt?.addEventListener('click', () => setEngine('prompt'));
+    engineBtnAi?.addEventListener('click', () => setEngine('ai'));
+    enginePill?.addEventListener('click', openSettingsModal);
 
     // Modal engine options
     document.getElementById('modal-opt-local')?.addEventListener('click', () => setEngine('local'));
+    document.getElementById('modal-opt-localllm')?.addEventListener('click', () => setEngine('localllm'));
     document.getElementById('modal-opt-prompt')?.addEventListener('click', () => setEngine('prompt'));
     document.getElementById('modal-opt-ai')?.addEventListener('click', () => setEngine('ai'));
 
+    // Local LLM runner presets & inputs
+    runnerOllamaBtn?.addEventListener('click', () => {
+      setLocalRunnerUI('ollama');
+      if (inputLocalEndpoint) inputLocalEndpoint.value = 'http://localhost:11434';
+      currentLocalEndpoint = 'http://localhost:11434';
+      localStorage.setItem(STORAGE_KEY_LOCAL_ENDPOINT, currentLocalEndpoint);
+    });
+    runnerLmStudioBtn?.addEventListener('click', () => {
+      setLocalRunnerUI('lmstudio');
+      if (inputLocalEndpoint) inputLocalEndpoint.value = 'http://localhost:1234/v1';
+      currentLocalEndpoint = 'http://localhost:1234/v1';
+      localStorage.setItem(STORAGE_KEY_LOCAL_ENDPOINT, currentLocalEndpoint);
+    });
+    runnerCustomBtn?.addEventListener('click', () => {
+      setLocalRunnerUI('custom');
+    });
+
+    btnDetectLocalModels?.addEventListener('click', handleDetectLocalModels);
+
+    inputLocalEndpoint?.addEventListener('input', () => {
+      currentLocalEndpoint = inputLocalEndpoint.value.trim();
+      localStorage.setItem(STORAGE_KEY_LOCAL_ENDPOINT, currentLocalEndpoint);
+    });
+
+    inputLocalModel?.addEventListener('input', () => {
+      currentLocalModel = inputLocalModel.value.trim();
+      localStorage.setItem(STORAGE_KEY_LOCAL_MODEL, currentLocalModel);
+      if (currentEngine === 'localllm') {
+        headerEngineLabel.textContent = `Local: ${currentLocalModel}`;
+      }
+    });
+
+    // Chip quick pick delegation
+    localModelChips?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.chip-model-btn');
+      if (btn && btn.dataset.model) {
+        const selected = btn.dataset.model;
+        if (inputLocalModel) inputLocalModel.value = selected;
+        currentLocalModel = selected;
+        localStorage.setItem(STORAGE_KEY_LOCAL_MODEL, selected);
+        if (currentEngine === 'localllm') {
+          headerEngineLabel.textContent = `Local: ${selected}`;
+        }
+        showToast(`Selected model: ${selected}`);
+      }
+    });
+
     // Provider options
-    provGeminiBtn.addEventListener('click', () => updateProviderSelectionUI('gemini'));
-    provGroqBtn.addEventListener('click', () => updateProviderSelectionUI('groq'));
+    provGeminiBtn?.addEventListener('click', () => updateProviderSelectionUI('gemini'));
+    provGroqBtn?.addEventListener('click', () => updateProviderSelectionUI('groq'));
 
     // Main buttons
     convertBtn.addEventListener('click', () => runConversion(false));
