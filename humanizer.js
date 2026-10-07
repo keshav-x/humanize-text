@@ -109,10 +109,9 @@ function extractProtectedEntities(text) {
     });
   }
 
-  // 3. Known proper names, frameworks, tools, and technical terms
+  // 3. Known technical frameworks, tools, and technical terms
   const KNOWN_ENTITIES = [
-    'Guido van Rossum', 'Gyanesh Kumar', 'Special Intensive Revision',
-    'Eisenhower Matrix', 'NumPy', 'Pandas', 'Matplotlib', 'Seaborn',
+    'NumPy', 'Pandas', 'Matplotlib', 'Seaborn',
     'PyTorch', 'TensorFlow', 'Scikit-learn', 'Django', 'Flask',
     'Python', 'C\\+\\+', 'Rust', 'Linux', 'Windows', 'macOS'
   ];
@@ -188,77 +187,11 @@ const AI_TELL_PATTERNS = [
   [/\bdrastically (?:reduces|decreases|diminishes)\b/gi, 'cuts down'],
   [/\bfrequently struggle with\b/gi, 'often run into'],
   [/\ba wide (?:variety|range) of\b/gi, 'many'],
-  [/\bThe pursuit of ([a-z]+) often begins with\b/gi, 'Building real $1 often starts with'],
-  [/\bReal progress depends on\b/gi, 'Real progress comes down to'],
-  [/\bDeveloping this consistency requires\b/gi, 'Building this kind of consistency takes'],
-  [/\bprevents mental fatigue and analysis paralysis\b/gi, 'prevents overthinking and mental fatigue'],
-  [/\bSteady, incremental gains compound over time\b/gi, 'Small steady wins compound over time'],
-  [/\byielding resilience and tangible mastery\b/gi, 'building resilience and genuine skill'],
-  [/\bChoosing process over preference\b/gi, 'Focusing on routine over mood'],
-  [/\bturns consistency into an automatic reflex rather than a daily negotiation\b/gi, 'makes consistency second nature instead of an internal debate'],
-  [/\bin\s+the\s+deliberate\s+repetition\s+of\s+quiet,\s*ordinary\s+choices\b/gi, 'in repeating small, unglamorous choices daily'],
-  [/\bthe\s+deliberate\s+repetition\s+of\s+quiet,\s*ordinary\s+choices\b/gi, 'repeating small, unglamorous choices daily'],
-  [/\bdeliberate\s+repetition\s+of\s+quiet,\s*ordinary\s+choices\b/gi, 'repeating small, unglamorous choices daily'],
-  [/\ballowing deliberate action to outlast fleeting enthusiasm\b/gi, 'letting deliberate action outlast initial enthusiasm'],
-  [/\bshifts from an emotional struggle to an automated habit\b/gi, 'shifts from an emotional battle to an automatic routine'],
-  [/\banchored to predictable routines rather than momentary impulse\b/gi, 'tied to predictable routines instead of momentary mood'],
-  [/\bbalancing structure with strategic focus\b/gi, 'balancing clear structure with focus'],
-  [/\bprotects cognitive bandwidth from constant interruptions\b/gi, 'protects mental energy from constant distractions'],
-  [/\bsharpens concentration and elevates output quality\b/gi, 'sharpens concentration and lifts the quality of work'],
-  [/\bSustainable execution relies on\b/gi, 'Staying consistent relies on'],
-  [/\berratic bursts of hyper-productivity\b/gi, 'erratic bursts of intense work'],
-  [/\bRecogni[sz]ing that peak conditions rarely exist\b/gi, 'Knowing that ideal conditions rarely exist'],
-  [/\ballows execution to continue regardless of external circumstances\b/gi, 'lets you keep working regardless of circumstances'],
   [/\bAt the end of the day,\s*/gi, 'In reality, '],
   [/\bIt goes without saying that\s*/gi, 'Naturally, '],
   [/\bNeedless to say,\s*/gi, 'Naturally, '],
   [/\bIt is worth mentioning that\s*/gi, 'Notably, '],
   [/\bIt is important to remember that\s*/gi, 'Remember, '],
-
-  // Technology, Programming, and Architecture
-  [/\b(?:___PROT_\d+___|Python) is an interpreted, high-level, general-purpose programming language\b/gi, 'Python threw out braces and semicolons early on, relying on clean indentation to keep syntax legible'],
-  [/\bIts design philosophy emphasizes code readability with the use of significant indentation\b/gi, 'It reads almost like plain English'],
-  [/\b(?:___PROT_\d+___|Python)'s language constructs and object-oriented approach aim to help programmers write clear, logical code for small and large-scale projects\b/gi, "Its object-oriented foundations help programmers structure clean logic across small and large codebases alike"],
-  [/\b(?:___PROT_\d+___|Python) is dynamically-typed and garbage-collected\b/gi, 'Memory management and dynamic typing run automatically behind the scenes'],
-  [/\bIt supports multiple programming paradigms, including structured, object-oriented and functional programming\b/gi, 'Developers can freely blend object-oriented and functional paradigms as needed'],
-  [/\bIt is widely used in data science, machine learning, and web development\b/gi, 'Today, it anchors modern data science pipelines, machine learning models, and everyday web development'],
-
-  // Blockchain and Decentralized Ledgers
-  [/\b(?:___PROT_\d+___|Blockchain) is a distributed ledger technology that records transactions across a decentralized network of computers in a verifiable and tamper-resistant manner\b/gi, "I remember debating with colleagues years ago about why anyone would care about blockchain or distributed ledgers. The whole thing sounded like hype. But once you look at the math behind Byzantine fault tolerance, it clicks"],
-  [/\bInstead of depending on a central authority like a bank or clearinghouse, consensus algorithms validate transfers and synchronize state across all network nodes\b/gi, "You're replacing bank clearinghouses with cryptographic consensus"],
-  [/\bCryptographic hashes chain each block of data to its predecessor, preventing retroactive alteration without network-wide consensus\b/gi, 'Each block links cryptographically to the one right behind it, meaning nobody can rewrite transaction history without getting caught by the entire network'],
-  [/\bWhile scalability and transaction costs remain active engineering challenges, decentralized networks provide clear audit trails for digital assets\b/gi, 'Sure, gas fees on decentralized networks can get ridiculous whenever people start trading meme coins, but the underlying concept of an unalterable audit trail is genuine computer science'],
-
-  // India Election (SIR)
-  [/\bRecent protests in (?:___PROT_\d+___|India) have focused on the (?:___PROT_\d+___|Election Commission)'s (?:___PROT_\d+___|Special Intensive Revision) \((?:___PROT_\d+___|SIR)\) of electoral rolls, particularly concerns about the possible exclusion of eligible voters from voter lists\b/gi, "Things got heated in Delhi and Mumbai this past October. Protesters hit the streets over the Election Commission's Special Intensive Revision of voter rolls, with opposition parties and student unions calling out what they saw as sketchy documentation rules"],
-  [/\b(?:In October 2026,\s*)?protests were held in cities including (?:___PROT_\d+___|Delhi) and (?:___PROT_\d+___|Mumbai),?\s*with opposition parties, student groups and civil-society activists demanding greater transparency in the revision process and, in some cases, calling for the resignation of Chief Election Commissioner (?:___PROT_\d+___|Gyanesh Kumar)\b/gi, 'Protesters worry legitimate voters could get quietly purged before the next election, with some demanding Chief Election Commissioner Gyanesh Kumar step down'],
-  [/\bwith opposition parties, student groups and civil-society activists demanding greater transparency in the revision process and, in some cases, calling for the resignation of Chief Election Commissioner (?:___PROT_\d+___|Gyanesh Kumar)\b/gi, 'Protesters worry legitimate voters could get quietly purged before the next election, with some demanding Chief Election Commissioner Gyanesh Kumar step down'],
-  [/\bProtesters argue that documentation requirements and changes to voter lists could disenfranchise legitimate voters, while the (?:___PROT_\d+___|Election Commission) maintains that (?:___PROT_\d+___|SIR) is intended to remove duplicate, deceased and otherwise ineligible entries and protect the accuracy of electoral rolls\b/gi, "Sure, the commission insists it’s just weeding out deceased and duplicate entries, but trust is already running thin"],
-  [/\bThe protests have also led to clashes and detentions in (?:___PROT_\d+___|Delhi), making (?:___PROT_\d+___|SIR) an important ongoing debate about voter rights, electoral (?:openness|transparency) and the (?:health|functioning) of (?:___PROT_\d+___|India)'s democratic institutions(?: in (?:___PROT_\d+___|India))?\b/gi, "Clashes and detentions in Delhi have turned the revision drive into a heated debate over voter rights, transparency, and the resilience of India's democratic institutions"],
-
-  // Renewable Energy & Climate
-  [/\bThe global transition toward renewable energy represents a critical milestone in combating climate change\b/gi, 'The worldwide shift toward renewable energy marks a defining turning point in the battle against climate change'],
-  [/\bSolar photovoltaic arrays and modern wind turbines now generate electricity at costs substantially lower than traditional fossil fuel power plants\b/gi, 'Solar arrays and modern wind turbines—especially in open regions—routinely produce power at costs well below legacy coal and gas plants'],
-  [/\bNevertheless, managing generation intermittency demands significant infrastructure investments in high-capacity battery storage and smart grid balancing solutions\b/gi, "Still, weather isn't predictable. Managing intermittent power demands heavy infrastructure investments in large battery banks and smart grid controls"],
-  [/\bCoordinated energy policies are essential to maintain stable grid frequency during peak consumption hours\b/gi, 'Targeted energy policies remain indispensable to keep grid frequencies stable when power demand peaks'],
-
-  // Healthcare & Clinical AI
-  [/\bArtificial intelligence is rapidly transforming modern clinical workflows and patient care\b/gi, 'Artificial intelligence is steadily reshaping everyday hospital workflows and clinical care'],
-  [/\bAdvanced machine learning models assist radiologists in identifying early-stage tumors and subtle fractures with high diagnostic precision\b/gi, 'Modern machine learning models help radiologists detect early-stage tumors and hairline fractures with high diagnostic accuracy'],
-  [/\bFurthermore, predictive analytics allow healthcare institutions to anticipate patient readmission risks and allocate critical medical resources efficiently\b/gi, 'Predictive analytics also let hospitals anticipate readmission risks early and route clinical resources where they are needed most'],
-  [/\bHowever, integrating automated decision-support systems requires careful clinician oversight to ensure ethical compliance and patient safety\b/gi, 'Even so, rolling out automated decision-support systems demands steady clinician oversight to safeguard patient welfare'],
-
-  // Cybersecurity & Zero Trust
-  [/\bModern cybersecurity defense requires a proactive strategy to mitigate sophisticated adversarial threats across enterprise networks\b/gi, 'Defending enterprise networks today demands a proactive security posture to blunt sophisticated cyber attacks'],
-  [/\bTraditional perimeter security models are increasingly insufficient against credential theft, ransomware, and insider vulnerabilities\b/gi, 'Legacy perimeter defenses are no longer enough to stop stolen credentials, ransomware payloads, and insider risks'],
-  [/\bConsequently, organizations are adopting Zero Trust architectures that enforce continuous multi-factor authentication and strict least-privilege access controls\b/gi, 'Because of this, security teams are deploying Zero Trust frameworks that mandate continuous authentication and strict least-privilege policies'],
-  [/\bRegular employee awareness training remains vital to prevent social engineering attacks and phishing breaches\b/gi, 'Consistent employee security training is still one of the most effective ways to stop phishing and social engineering traps'],
-
-  // Effective Time Management
-  [/\bEffective time management is essential for personal productivity and professional success\b/gi, 'Strong time management is foundational to sustained personal productivity and career growth'],
-  [/\bIn today's fast-paced corporate environment, professionals frequently struggle with context switching and meeting sprawl, which drastically reduces deep work focus\b/gi, "In modern fast-paced workplaces, professionals constantly battle meeting sprawl and context switching, draining mental energy from deep work"],
-  [/\bApplying the Eisenhower Matrix helps knowledge workers distinguish between urgent tasks and important long-term deliverables\b/gi, 'Using the Eisenhower Matrix allows knowledge workers to separate urgent fires from high-value strategic goals'],
-  [/\bBy establishing clear calendar defense mechanisms, individuals can prevent mental fatigue and maintain high output without burning out\b/gi, 'Setting firm calendar boundaries helps individuals avoid mental exhaustion and stay productive without burning out'],
 
   // Generalized Structural Cliché Busters
   [/\bIn order to ([a-z]+)\b/gi, 'To $1'],
@@ -281,202 +214,6 @@ function stripAITells(text) {
 }
 // ── 4. Collocations & AI Lexicon Purge ──────────────────────────────────────────
 const COLLOCATIONS = [
-  {
-    "from": "the pursuit of discipline",
-    "to": ["building real discipline", "practicing discipline", "working on discipline"]
-  },
-  {
-    "from": "grand gestures",
-    "to": ["big declarations", "grand promises", "dramatic gestures"]
-  },
-  {
-    "from": "in the deliberate repetition of",
-    "to": ["in repeating", "in sticking with", "in the daily repetition of"]
-  },
-  {
-    "from": "the deliberate repetition of",
-    "to": ["repeating", "sticking with", "the daily repetition of"]
-  },
-  {
-    "from": "deliberate repetition of",
-    "to": ["repeating", "sticking with", "daily repetition of"]
-  },
-  {
-    "from": "quiet, ordinary choices",
-    "to": ["small daily choices", "routine decisions", "ordinary everyday choices"]
-  },
-  {
-    "from": "opening spark",
-    "to": ["initial spark", "starting spark", "first spark"]
-  },
-  {
-    "from": "ambitious targets",
-    "to": ["big targets", "ambitious goals", "high goals"]
-  },
-  {
-    "from": "notoriously volatile",
-    "to": ["fickle", "quick to fade", "hard to rely on"]
-  },
-  {
-    "from": "physical fatigue",
-    "to": ["tiredness", "fatigue", "exhaustion"]
-  },
-  {
-    "from": "routine monotony",
-    "to": ["day-to-day monotony", "routine boredom", "routine repetition"]
-  },
-  {
-    "from": "eliminate friction",
-    "to": ["cut down friction", "remove friction", "lower friction"]
-  },
-  {
-    "from": "outlast fleeting enthusiasm",
-    "to": ["outlast initial excitement", "keep going when excitement fades", "outlast fleeting motivation"]
-  },
-  {
-    "from": "emotional struggle",
-    "to": ["mental battle", "emotional friction", "daily struggle"]
-  },
-  {
-    "from": "automated habit",
-    "to": ["automatic routine", "steady habit", "automatic reflex"]
-  },
-  {
-    "from": "anchored to predictable routines",
-    "to": ["tied to steady routines", "anchored to regular habits", "built on predictable routines"]
-  },
-  {
-    "from": "momentary impulse",
-    "to": ["fleeting mood", "momentary impulse", "how you feel in the moment"]
-  },
-  {
-    "from": "balancing structure with strategic focus",
-    "to": ["balancing clear structure with focus", "mixing structure with clear priorities"]
-  },
-  {
-    "from": "lowering initial inertia",
-    "to": ["cutting starting friction", "lowering initial resistance", "making it easy to start"]
-  },
-  {
-    "from": "initial inertia",
-    "to": ["starting friction", "starting resistance", "the initial hurdle"]
-  },
-  {
-    "from": "reducing the friction required to start a task",
-    "to": ["cutting down the effort needed to begin", "making starting as painless as possible", "lowering the friction to get going"]
-  },
-  {
-    "from": "breaking complex objectives into small, measurable actions",
-    "to": ["breaking big goals into small, clear steps", "splitting large tasks into bite-sized actions"]
-  },
-  {
-    "from": "mental fatigue and analysis paralysis",
-    "to": ["mental drain and analysis paralysis", "overthinking and burnout", "indecision and fatigue"]
-  },
-  {
-    "from": "structuring intentional boundaries",
-    "to": ["setting firm boundaries", "building clear boundaries", "drawing intentional boundaries"]
-  },
-  {
-    "from": "focused, single-task work",
-    "to": ["single-task deep work", "single-task focus", "uninterrupted focus"]
-  },
-  {
-    "from": "cognitive bandwidth",
-    "to": ["mental energy", "focus", "working memory"]
-  },
-  {
-    "from": "constant interruptions",
-    "to": ["frequent interruptions", "constant distractions", "ongoing disruptions"]
-  },
-  {
-    "from": "digital distractions",
-    "to": ["notifications and tabs", "online distractions", "screen distractions"]
-  },
-  {
-    "from": "sharpens concentration and elevates output quality",
-    "to": ["clears concentration and lifts work quality", "sharpens focus and improves output"]
-  },
-  {
-    "from": "prioritising momentum over intensity",
-    "to": ["choosing momentum over burnout", "favoring momentum over intensity"]
-  },
-  {
-    "from": "prioritizing momentum over intensity",
-    "to": ["choosing momentum over burnout", "favoring momentum over intensity"]
-  },
-  {
-    "from": "sustainable execution",
-    "to": ["real consistency", "steady consistency", "sustainable work"]
-  },
-  {
-    "from": "erratic bursts of hyper-productivity",
-    "to": ["chaotic all-nighters", "erratic bursts of overtime", "random intense sprints"]
-  },
-  {
-    "from": "steady, incremental gains compound over time",
-    "to": ["small steady gains compound over time", "steady incremental wins add up"]
-  },
-  {
-    "from": "yielding resilience and tangible mastery",
-    "to": ["building resilience and real skill", "yielding resilience and actual mastery"]
-  },
-  {
-    "from": "decoupling output from mood",
-    "to": ["separating work from mood", "unhooking output from how you feel", "detaching work from mood"]
-  },
-  {
-    "from": "peak conditions rarely exist",
-    "to": ["ideal conditions rarely happen", "conditions are rarely perfect", "perfect timing is rare"]
-  },
-  {
-    "from": "allows execution to continue regardless of external circumstances",
-    "to": ["lets execution continue no matter what happens around you", "keeps work moving forward regardless of circumstances"]
-  },
-  {
-    "from": "choosing process over preference",
-    "to": ["choosing routine over mood", "putting process ahead of mood", "prioritizing the process over preference"]
-  },
-  {
-    "from": "turns consistency into an automatic reflex rather than a daily negotiation",
-    "to": ["makes consistency second nature instead of an internal debate", "turns consistency into an automatic reflex rather than a debate"]
-  },
-  {
-    "from": "sustained achievement",
-    "to": ["long-term success", "lasting achievement", "long-term progress"]
-  },
-  {
-    "from": "extraordinary willpower",
-    "to": ["raw willpower", "pure willpower", "heroic willpower"]
-  },
-  {
-    "from": "unrelenting consistency",
-    "to": ["showing up every day", "steady consistency", "unwavering consistency"]
-  },
-  {
-    "from": "immediate gratification",
-    "to": ["quick gratification", "short-term gratification", "instant payoff"]
-  },
-  {
-    "from": "cumulative effect of",
-    "to": ["compounded effect of", "result of stacking", "sum of"]
-  },
-  {
-    "from": "executed with precision",
-    "to": ["carried out with care", "done with precision", "executed with quiet focus"]
-  },
-  {
-    "from": "quiet patience",
-    "to": ["calm patience", "patient persistence", "quiet persistence"]
-  },
-  {
-    "from": "unwavering commitment",
-    "to": ["consistent commitment", "steady commitment", "sticking with it"]
-  },
-  {
-    "from": "is not born from",
-    "to": ["does not come from", "is rarely born from"]
-  },
   {
     "from": "delve into",
     "to": ["look into", "explore", "dig into"]
@@ -520,82 +257,6 @@ const COLLOCATIONS = [
   {
     "from": "serves as a reminder that",
     "to": ["reminds us that"]
-  },
-  {
-    "from": "fundamentally altered",
-    "to": ["reshaped", "shifted", "transformed", "changed"]
-  },
-  {
-    "from": "traditional corporate operations",
-    "to": ["everyday business routines", "standard corporate operations", "how companies run"]
-  },
-  {
-    "from": "eliminating lengthy daily commutes",
-    "to": ["cutting out long commutes", "skipping daily commutes", "dropping long commutes"]
-  },
-  {
-    "from": "higher schedule flexibility and improved work-life balance",
-    "to": ["more flexible hours and better work-life balance", "higher schedule flexibility and improved work-life balance"]
-  },
-  {
-    "from": "significant coordination friction",
-    "to": ["real coordination friction", "communication hiccups", "operational friction"]
-  },
-  {
-    "from": "cross-time-zone synchronization",
-    "to": ["syncing across time zones", "handling different time zones"]
-  },
-  {
-    "from": "intentional communication protocols",
-    "to": ["clear communication habits", "explicit check-in routines", "deliberate communication habits"]
-  },
-  {
-    "from": "preserve cohesive team culture",
-    "to": ["keep teams connected", "maintain team cohesion", "protect team culture"]
-  },
-  {
-    "from": "rapidly transforming",
-    "to": ["quickly shifting", "actively reshaping", "changing"]
-  },
-  {
-    "from": "high diagnostic precision",
-    "to": ["strong accuracy", "high precision", "reliable accuracy"]
-  },
-  {
-    "from": "anticipate patient readmission risks",
-    "to": ["flag readmission risks early", "spot readmission risks"]
-  },
-  {
-    "from": "allocate critical medical resources efficiently",
-    "to": ["route medical resources where needed", "direct resources effectively"]
-  },
-  {
-    "from": "careful clinician oversight",
-    "to": ["close doctor review", "thorough clinical oversight"]
-  },
-  {
-    "from": "ensure ethical compliance and patient safety",
-    "to": ["protect patients and catch mistakes", "keep patients safe"]
-  },
-  {
-    "from": "distributed ledger technology",
-    "to": ["shared ledger system", "distributed ledger architecture"]
-  },
-  {
-    "from": "verifiable and tamper-resistant manner",
-    "to": ["tamper-resistant, verifiable setup", "tamper-proof way"]
-  },
-  {
-    "from": "Instead of depending on a central authority",
-    "to": ["Rather than relying on a central authority", "Without trusting a central entity"]
-  },
-  {
-    "from": "active engineering challenges",
-    "to": ["ongoing engineering hurdles", "active technical challenges"]
-  },
-  {
-    "from": "clear audit trails",
-    "to": ["transparent audit trails", "verifiable audit records"]
   },
   {
     "from": "in order to",
@@ -8884,27 +8545,17 @@ function softenTransitions(sentence, style) {
   return sentence;
 }
 
-// Final "Overall, ..." recap lines are one of the strongest AI tells.
+// Soften formulaic conclusion openers without discarding user content
 function dropRecapCloser(sents) {
-  if (sents.length < 4) return sents;
-  const last = sents[sents.length - 1];
-  if (/^(Overall|Ultimately|In essence|In short|All in all|In summary|To sum up)\b/i.test(last)
-      && !/___PROT_|\d/.test(last)) {
-    return sents.slice(0, -1);
+  if (!sents || sents.length === 0) return sents;
+  const lastIdx = sents.length - 1;
+  const last = sents[lastIdx];
+  const m = last.match(/^(?:Overall|Ultimately|In essence|In short|All in all|In summary|To sum up),?\s*(.*)$/i);
+  if (m && m[1]) {
+    sents[lastIdx] = upperFirst(m[1]);
   }
   return sents;
 }
-
-const PUNCHY_HUMAN_HOOKS = [
-  'Getting this right in practice is rarely simple.',
-  'Real-world execution hits friction fast.',
-  'Theory sounds clean until reality hits.',
-  'Working through the details takes patience.',
-  'Most practitioners learn this the hard way.',
-  'Nobody gets this right on day one.',
-  'The operational reality is rarely neat.',
-  'It’s brutal out there.'
-];
 
 function transformDefinitionOpener(sents, style = 'natural') {
   if (sents.length === 0) return sents;
@@ -8941,18 +8592,25 @@ function transformDefinitionOpener(sents, style = 'natural') {
 }
 
 function injectRhythmicBurstiness(sents, style, opts = {}) {
-  if (sents.length < 2 || style === 'academic' || opts.isListItem || opts.noHooks) return sents;
-  if (/^\s*([*•\-\d]+\.?|[a-zA-Z]\))\s+/.test(sents[0] || '')) return sents;
+  if (sents.length < 2 || opts.isListItem) return sents;
 
   const lengths = sents.map(wc);
   const mean = lengths.reduce((a, b) => a + b, 0) / lengths.length;
   const variance = lengths.reduce((sum, l) => sum + Math.pow(l - mean, 2), 0) / lengths.length;
   const cv = (Math.sqrt(variance) / (mean || 1)) * 100;
 
-  // If sentence lengths are flat (CV < 40%), inject an authentic human hook to break uniformity
-  if (cv < 40 && sents.length <= 5) {
-    const idx = Math.abs(sents[0].length * 7 + sents.length) % PUNCHY_HUMAN_HOOKS.length;
-    return [PUNCHY_HUMAN_HOOKS[idx], ...sents];
+  // If sentence lengths are flat (CV < 40%), split the longest compound sentence to introduce natural cadence variance
+  if (cv < 40) {
+    let maxIdx = 0;
+    for (let i = 1; i < lengths.length; i++) {
+      if (lengths[i] > lengths[maxIdx]) maxIdx = i;
+    }
+    if (lengths[maxIdx] >= 16) {
+      const splitRes = splitLongSentence(sents[maxIdx]);
+      if (splitRes.length > 1) {
+        sents.splice(maxIdx, 1, ...splitRes);
+      }
+    }
   }
   return sents;
 }
@@ -9086,15 +8744,6 @@ function applyAcademicRestructuring(sents) {
     [/\bplays a crucial role in\b/gi, 'remains central to'],
     [/\bplays a vital role in\b/gi, 'remains fundamental to'],
     [/\bplays a pivotal role in\b/gi, 'critically informs'],
-    [/\brepresents a critical milestone in\b/gi, 'marks a significant development within'],
-    [/\bdemands significant infrastructure investments in\b/gi, 'necessitates substantial capital allocation toward'],
-    [/\bis rapidly transforming\b/gi, 'is progressively reshaping'],
-    [/\bfrequently struggle with\b/gi, 'routinely encounter constraints surrounding'],
-    [/\bdrastically reduces\b/gi, 'substantially attenuates'],
-    [/\bproactive strategy to mitigate\b/gi, 'systematic approach to counter'],
-    [/\btraditional perimeter security models\b/gi, 'conventional perimeter defenses'],
-    [/\bprotesters argue that\b/gi, 'critics contend that'],
-    [/\bmaintain stable grid frequency\b/gi, 'stabilize operational frequency across transmission networks'],
     [/\bIn conclusion,\s*/gi, 'In synthesis, '],
     [/\bIn summary,\s*/gi, 'Synthesizing these findings, ']
   ];
@@ -9178,47 +8827,44 @@ function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   return restoreProtectedEntities(joined, protectedItems);
 }
 
-function destructureBulletHeadings(rawText, style) {
-  const GERUND_TO_IMPERATIVE = {
-    'lowering': 'lower',
-    'reducing': 'reduce',
-    'structuring': 'structure',
-    'prioritising': 'prioritise',
-    'prioritizing': 'prioritize',
-    'decoupling': 'decouple',
-    'balancing': 'balance',
-    'managing': 'manage',
-    'creating': 'create',
-    'building': 'build',
-    'maintaining': 'maintain',
-    'establishing': 'establish',
-    'cultivating': 'cultivate',
-    'developing': 'develop',
-    'maximizing': 'maximize',
-    'minimizing': 'minimize',
-    'fostering': 'foster',
-    'choosing': 'choose',
-    'setting': 'set',
-    'cutting': 'cut'
-  };
+function gerundToBase(word) {
+  if (!word || !word.toLowerCase().endsWith('ing') || word.length < 5) return null;
+  const w = word.toLowerCase();
+  if (w.endsWith('tting')) return w.slice(0, -5) + 't';
+  if (w.endsWith('pping')) return w.slice(0, -5) + 'p';
+  if (w.endsWith('nning')) return w.slice(0, -5) + 'n';
+  if (w.endsWith('rring')) return w.slice(0, -5) + 'r';
+  if (w.endsWith('gging')) return w.slice(0, -5) + 'g';
+  if (w.endsWith('bbing')) return w.slice(0, -5) + 'b';
+  if (w.endsWith('mming')) return w.slice(0, -5) + 'm';
+  const base = w.slice(0, -3);
+  if (/(?:ur|iz|is|at|pl|bl|tl|sl|cl|gl|ud|id|od|os|us|iv|uc|ag|ug)$/.test(base)) {
+    return base + 'e';
+  }
+  return base;
+}
 
+function destructureBulletHeadings(rawText, style) {
   return rawText.split('\n').map(line => {
     const m = line.match(/^(\s*[*•\-\d]+\.?|[a-zA-Z]\))\s+([^:\n]{3,60}):\s+(.+)$/);
     if (!m) return line;
     const [, bullet, heading, body] = m;
-    const firstWord = heading.trim().split(/\s+/)[0].toLowerCase();
+    const firstWord = heading.trim().split(/\s+/)[0];
     
     let processedBody = body;
     const bodyM = processedBody.match(/^([A-Z][a-z]+ing)\s+(.*)$/);
-    if (bodyM && GERUND_TO_IMPERATIVE[bodyM[1].toLowerCase()] && style !== 'academic') {
-      const imp = GERUND_TO_IMPERATIVE[bodyM[1].toLowerCase()];
-      processedBody = imp.charAt(0).toUpperCase() + imp.slice(1) + ' ' + bodyM[2];
+    if (bodyM && style !== 'academic') {
+      const imp = gerundToBase(bodyM[1]);
+      if (imp) {
+        processedBody = imp.charAt(0).toUpperCase() + imp.slice(1) + ' ' + bodyM[2];
+      }
     }
 
-    if (GERUND_TO_IMPERATIVE[firstWord] && style !== 'academic') {
+    const impHeading = gerundToBase(firstWord);
+    if (impHeading && style !== 'academic') {
       const restHeading = heading.trim().slice(firstWord.length).trim();
-      const imperativeHeading = GERUND_TO_IMPERATIVE[firstWord].charAt(0).toUpperCase() 
-        + GERUND_TO_IMPERATIVE[firstWord].slice(1) 
+      const imperativeHeading = impHeading.charAt(0).toUpperCase() 
+        + impHeading.slice(1) 
         + (restHeading ? ' ' + restHeading : '');
       return `${bullet} ${imperativeHeading}: ${processedBody}`;
     }
