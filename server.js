@@ -89,6 +89,7 @@ function relayLocalLLMChat(payload, res) {
       model: payload.model || 'llama3.2',
       messages: payload.messages || [{ role: 'user', content: payload.prompt || '' }],
       stream: false,
+      think: false,
       options: {
         temperature: typeof payload.temperature === 'number' ? payload.temperature : 0.85,
         top_p: 0.9
@@ -175,6 +176,7 @@ function handleStreamLocalLLM(targetUrl, payload, isOllama, res) {
       model: payload.model || 'llama3.2',
       prompt: payload.prompt || (payload.messages?.map(m => `${m.role}: ${m.content}`).join('\n\n') || ''),
       stream: true,
+      think: false,
       options: {
         temperature: typeof payload.temperature === 'number' ? payload.temperature : 0.85,
         top_p: 0.9
@@ -274,6 +276,7 @@ function executeOllamaGenerate(targetUrl, payload, res) {
     model: payload.model || 'llama3.2',
     prompt: payload.prompt,
     stream: false,
+    think: false,
     options: {
       temperature: typeof payload.temperature === 'number' ? payload.temperature : 0.85,
       top_p: 0.9

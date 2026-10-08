@@ -74,11 +74,19 @@ const ANCHOR_PATTERNS = [
   /\b(?:[A-Z][a-z]+(?:\s+(?:of|the|van|von|de|and)\s+|\s+)){1,3}[A-Z][a-z]+\b/g
 ];
 
+const COMMON_ANCHOR_STARTERS = /^(?:Applying|Utilizing|Leveraging|Adopting|Implementing|Using|By|With|In|At|On|For|During|Before|After|Because|Since|Although|When|While|If|Through)\s+/i;
+
 function collectAnchors(text) {
   const found = new Set();
   for (const re of ANCHOR_PATTERNS) {
     const matches = text.match(re) || [];
-    for (const m of matches) found.add(m.replace(/[,.]$/, ''));
+    for (const m of matches) {
+      let clean = m.replace(/[,.]$/, '').trim();
+      if (COMMON_ANCHOR_STARTERS.test(clean)) {
+        clean = clean.replace(COMMON_ANCHOR_STARTERS, '').trim();
+      }
+      if (clean.length >= 3) found.add(clean);
+    }
   }
   return Array.from(found);
 }
@@ -200,9 +208,9 @@ const AI_TELL_PATTERNS = [
   [/\b(?:is|are)\s+less\s+about\s+([^,]+)\s+and\s+more\s+about\s+([^.]+)\b/gi, 'comes down to $2 rather than $1'],
   [/\b(?:not\s+merely|not\s+just)\s+([^,]+),?\s+but\s+(?:also\s+)?([^.]+)\b/gi, 'both $1 and $2'],
   [/\*\*([^\*]+)\*\*:\s*/g, '$1: '],
-  [/\bIn today's(?:\s+[\w-]+){0,3}\s+(?:world|landscape|environment|society|market|workplace|era)[,]?\s*/gi, 'Today, '],
-  [/\bIn the realm of\s+/gi, 'In '],
-  [/\bIn the contemporary landscape\s*,?\s*/gi, 'Today, '],
+  [/\bIn today's(?:\s+[\w-]+){0,3}\s+(?:world|landscape|society|era)[,]?\s*/gi, 'In modern settings, '],
+  [/\bIn today's(?:\s+[\w-]+){0,3}\s+(?:environment|workplace|market)[,]?\s*/gi, 'Across modern workplaces, '],
+  [/\bIn the contemporary(?:\s+[\w-]+){0,3}\s+(?:world|landscape|environment|era)[,]?\s*/gi, 'In modern practice, '],
   [/\b(?:In conclusion|To conclude|To summarize|In summary)\s*,?\s*/gi, ''],
   [/\bplays? a (?:crucial|pivotal|vital|key|significant|important) role in\b/gi, 'matters in'],
   [/\bstands? as a (?:testament|beacon|symbol) (?:of|to|for)\b/gi, 'shows'],
@@ -6442,10 +6450,9 @@ const SYNONYMS = {
     "offering"
   ],
   "professional": [
-    "pro",
-    "expert",
-    "specialist",
-    "trained"
+    "career",
+    "workplace",
+    "expert"
   ],
   "profit": [
     "gain",
@@ -8033,11 +8040,7 @@ const SYNONYMS = {
     "in",
     "during"
   ],
-  "without": [
-    "lacking",
-    "free of",
-    "devoid of"
-  ],
+  "without": [],
   "wonderful": [
     "great",
     "amazing",
@@ -8276,7 +8279,19 @@ function swapSafeSynonyms(text, probability = 0.12) {
       'battery storage', 'electoral roll', 'electoral rolls', 'voter list', 'voter lists',
       'zero trust', 'supply chain', 'deep work', 'mental fatigue', 'decision making',
       'decision support', 'programming language', 'high level', 'general purpose',
-      'object oriented', 'functional programming', 'clinical workflows', 'patient care'
+      'object oriented', 'functional programming', 'clinical workflows', 'patient care',
+      'context switching', 'knowledge workers', 'knowledge worker', 'meeting sprawl',
+      'long-term deliverables', 'calendar defense', 'defense mechanisms', 'work environment',
+      'corporate environment', 'least privilege', 'circuit breaker', 'event loop',
+      'garbage collection', 'gradient descent', 'cross validation', 'cold start',
+      'single sign-on', 'rate limiting', 'buffer overflow', 'type inference',
+      'distributed ledger', 'feature flag', 'root cause analysis', 'technical debt',
+      'cognitive load', 'flow state', 'working memory', 'eisenhower matrix',
+      'pomodoro technique', 'kanban board', 'active recall', 'spaced repetition',
+      'microservice architecture', 'cloud computing', 'data pipeline', 'neural network',
+      'natural language processing', 'large language model', 'generative ai',
+      'reinforcement learning', 'continuous integration', 'continuous delivery',
+      'professional success', 'personal productivity'
     ];
     const surrounding = text.toLowerCase().slice(Math.max(0, fullTextSoFar.length - 25), fullTextSoFar.length + 30);
     if (COMPOUND_BLACKLIST.some(phrase => surrounding.includes(phrase))) {
@@ -8357,7 +8372,10 @@ function ensureBurstiness(sentences) {
         } else if (conj === 'because') {
           prefix = 'This occurs because ';
         }
-        sentences.splice(longestIdx, 1, h, prefix + (t.charAt(0).toUpperCase() + t.slice(1)));
+        const cleanT = (prefix && prefix.endsWith(' '))
+          ? (t.charAt(0).toLowerCase() + t.slice(1))
+          : (t.charAt(0).toUpperCase() + t.slice(1));
+        sentences.splice(longestIdx, 1, h, prefix + cleanT);
       }
     }
   }
@@ -8413,6 +8431,9 @@ function applyRegister(text, style) {
 
 function fixArticles(text) {
   return text
+    .replace(/\b([Aa])\s+([Aa])\s+/g, '$1 ')
+    .replace(/\b([Aa])\s+an\s+/gi, 'an ')
+    .replace(/\b(an)\s+([Aa])\s+/gi, 'an ')
     .replace(/\b(a)(\s+)(?=[aeiou][a-z]{2,})(?!uni|use|usu|one|eu)/gi, (m, a, sp) => (a === 'A' ? 'An' : 'an') + sp)
     .replace(/\b(an)(\s+)(?=[bcdfgjklmnpqrstvwxyz][a-z]{2,})(?!hour|honest|honor|heir)/gi, (m, a, sp) => (a === 'An' ? 'A' : 'a') + sp);
 }
@@ -8537,7 +8558,9 @@ function splitLongSentence(sentence) {
     const head = sentence.slice(0, m.index).trim() + '.';
     const word = m[1].toLowerCase();
     const tail = sentence.slice(m.index + m[0].length).trim();
-    const keep = (word === 'but' || word === 'yet' || word === 'so') ? upperFirst(word) + ' ' + tail : upperFirst(tail);
+    const keep = (word === 'but' || word === 'yet' || word === 'so')
+      ? (upperFirst(word) + ' ' + (tail.charAt(0).toLowerCase() + tail.slice(1)))
+      : upperFirst(tail);
     return [head, keep];
   }
   return [sentence];
@@ -8587,15 +8610,47 @@ function dropRecapCloser(sents) {
 }
 
 function transformDefinitionOpener(sents, style = 'natural') {
-  if (sents.length === 0) return sents;
+  if (!sents || sents.length === 0) return sents;
   const s0 = sents[0];
-  const m = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+(?:(is|represents|denotes|comprises)\s+(an?|the)?)\s+(.*)$/i);
+
+  // Pattern A: [Subject] is (essential | vital | crucial | pivotal | critical | fundamental | indispensable) (for | to) [Domain/Outcome]
+  const mEssential = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+(?:is|has become|remains|serves as|acts as|stands as|constitutes)\s+(?:an?\s+)?(essential|vital|crucial|pivotal|critical|fundamental|indispensable)\s+(?:turning point|milestone|driver|prerequisite|element|paradigm|component)?\s*(?:for|in|to)\s+([^.]+)[.!?]?$/i);
+  if (mEssential) {
+    const subj = mEssential[1].trim();
+    const outcome = mEssential[3].trim().replace(/[.!?]+$/, '');
+    const cleanOutcome = outcome.replace(/^(?:maintaining|achieving|supporting|promoting|securing|ensuring)\s+/i, '');
+    const subjClean = subj.replace(/^(The|A|An)\s+([a-z])/i, (m, p1, p2) => p1.toLowerCase() + ' ' + p2);
+    const subjLower = subj.startsWith('___PROT_') ? subj : (subj.charAt(0).toLowerCase() + subj.slice(1));
+    const subjAcademic = subj.startsWith('___PROT_') ? subj : (subj.charAt(0).toUpperCase() + subj.slice(1));
+
+    let options;
+    if (style === 'academic') {
+      options = [
+        `${subjAcademic} represents a foundational prerequisite for ${cleanOutcome}.`,
+        `Achieving sustained progress in ${cleanOutcome} relies fundamentally on ${subjLower}.`,
+        `Within this domain, ${subjLower} functions as an indispensable driver of ${cleanOutcome}.`,
+        `The realization of ${cleanOutcome} depends substantially upon ${subjLower}.`
+      ];
+    } else {
+      options = [
+        `Few things influence ${cleanOutcome} more directly than ${subjLower}.`,
+        `Sustaining ${cleanOutcome} ultimately comes down to ${subjLower}.`,
+        `Without ${subjLower}, keeping up with ${cleanOutcome} quickly turns into an uphill battle.`,
+        `Getting a real handle on ${subjLower} is central to ${cleanOutcome}.`
+      ];
+    }
+    const pick = options[Math.abs(subj.length * 7) % options.length];
+    sents[0] = pick;
+    return sents;
+  }
+
+  // Pattern B: [Subject] is (a | an | the) [Category] that [Description]
+  const m = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+(is|represents|denotes|comprises)\s+(?:(an?|the)\s+)?(.*)$/i);
   if (m) {
     let subj = m[1].trim();
     const art = m[3] ? m[3].trim() + ' ' : '';
     const rest = m[4].trim().replace(/[.!?]+$/, '');
 
-    // Clean lowercase for non-proper-noun subjects placed after prepositions
     const subjClean = subj.replace(/^(The|A|An)\s+([a-z])/i, (match, p1, p2) => p1.toLowerCase() + ' ' + p2);
 
     let options;
@@ -8608,16 +8663,137 @@ function transformDefinitionOpener(sents, style = 'natural') {
       ];
     } else {
       options = [
-        `At its core, ${subj} operates as ${art}${rest}.`,
-        `In practical terms, ${subj} works as ${art}${rest}.`,
+        `At its core, ${subjClean} operates as ${art}${rest}.`,
+        `In practical terms, ${subjClean} works as ${art}${rest}.`,
         `When you look at ${subjClean}, it basically acts as ${art}${rest}.`,
-        `Getting into ${subj} means understanding how it works: it functions as ${art}${rest}.`
+        `Understanding ${subjClean} comes down to how it works: it functions as ${art}${rest}.`
       ];
     }
     const pick = options[Math.abs(subj.length * 3) % options.length];
     sents[0] = pick;
   }
   return sents;
+}
+
+function restructureGerundClauses(sentence, style = 'natural') {
+  if (!sentence || sentence.length < 25) return sentence;
+
+  // By [verb-ing] [Object], [Subject] [can|may|experienced...] [Predicate]
+  const m = sentence.match(/^By\s+([a-z]+ing(?:\s+[a-z]+)?)\s+(.+?),\s+([A-Za-z0-9_\s-]+?)\s+(can|may|could|are able to|experienced|achieved)\s+(.+?)[.!?]?$/i);
+  if (!m) return sentence;
+
+  const [, gerund, object, subject, modal, predicate] = m;
+  const cleanObj = object.trim();
+  const cleanSubj = subject.trim();
+  const cleanPred = predicate.trim();
+
+  let options;
+  if (modal === 'experienced' || modal === 'achieved') {
+    options = style === 'academic'
+      ? [
+        `Through ${gerund} ${cleanObj}, ${cleanSubj} ${modal} ${cleanPred}.`,
+        `The shift involving ${gerund} ${cleanObj} enabled ${cleanSubj} to experience ${cleanPred}.`
+      ]
+      : [
+        `As ${cleanSubj} moved into ${cleanObj}, they ${modal} ${cleanPred}.`,
+        `Transitioning toward ${cleanObj} led ${cleanSubj} to see ${cleanPred}.`
+      ];
+  } else if (style === 'academic') {
+    options = [
+      `Establishing ${cleanObj} enables ${cleanSubj} to ${cleanPred}.`,
+      `Through the systematic deployment of ${cleanObj}, ${cleanSubj} effectively ${cleanPred}.`,
+      `The implementation of ${cleanObj} ensures that ${cleanSubj} can ${cleanPred}.`
+    ];
+  } else {
+    options = [
+      `Setting up ${cleanObj} allows ${cleanSubj} to ${cleanPred}.`,
+      `When ${cleanSubj} establish ${cleanObj}, they can ${cleanPred}.`,
+      `With ${cleanObj} firmly in place, ${cleanSubj} can ${cleanPred}.`
+    ];
+  }
+
+  return options[Math.abs(sentence.length * 3) % options.length];
+}
+
+function restructureParticipialFacilitation(sentence, style = 'natural') {
+  if (!sentence || sentence.length < 25) return sentence;
+
+  // Pattern A: Applying / Utilizing / Leveraging / Adopting [Tool] helps [Audience] [Verb] [Rest]
+  const mA = sentence.match(/^(?:Applying|Utilizing|Leveraging|Adopting|Implementing|Employing)\s+([^,]{3,50})\s+(helps?|enables?|allows?)\s+([A-Za-z0-9_\s-]+?)\s+(?:to\s+)?(distinguish|separate|identify|prioritize|optimize|streamline|accelerate|mitigate|manage|navigate|balance|handle|reach|achieve|differentiate)\s+(.+?)[.!?]?$/i);
+  if (mA) {
+    const [, tool, helperVerb, audience, actionVerb, rest] = mA;
+    const cleanTool = tool.trim();
+    const cleanAudience = audience.trim();
+    const cleanRest = rest.trim();
+
+    let options;
+    if (style === 'academic') {
+      options = [
+        `The operationalization of ${cleanTool} provides ${cleanAudience} with a structured method to ${actionVerb} ${cleanRest}.`,
+        `Deploying ${cleanTool} equips ${cleanAudience} to systematically ${actionVerb} ${cleanRest}.`,
+        `Through ${cleanTool}, ${cleanAudience} obtain an analytical framework to ${actionVerb} ${cleanRest}.`
+      ];
+    } else {
+      options = [
+        `Frameworks like ${cleanTool} give ${cleanAudience} a practical way to ${actionVerb} ${cleanRest}.`,
+        `With ${cleanTool}, ${cleanAudience} can more reliably ${actionVerb} ${cleanRest}.`,
+        `Putting ${cleanTool} into practice gives ${cleanAudience} the clarity to ${actionVerb} ${cleanRest}.`
+      ];
+    }
+    return options[Math.abs(sentence.length * 5) % options.length];
+  }
+
+  // Pattern B: Utilizing / Leveraging / Adopting [Tool] facilitates/drives/supports [Rest]
+  const mB = sentence.match(/^(?:Applying|Utilizing|Leveraging|Adopting|Implementing|Employing)\s+([^,]{3,60})\s+(facilitates?|supports?|accelerates?|drives?|simplifies?)\s+([^.]+)[.!?]?$/i);
+  if (mB) {
+    const [, tool, verb, rest] = mB;
+    const cleanTool = tool.trim();
+    const cleanRest = rest.trim();
+
+    let options;
+    if (style === 'academic') {
+      options = [
+        `Deploying ${cleanTool} provides direct operational support for ${cleanRest}.`,
+        `Through the adoption of ${cleanTool}, teams systematically streamline ${cleanRest}.`
+      ];
+    } else {
+      options = [
+        `Adopting ${cleanTool} makes it much simpler to manage ${cleanRest}.`,
+        `Using ${cleanTool} is one of the cleanest ways to handle ${cleanRest}.`
+      ];
+    }
+    return options[Math.abs(sentence.length * 7) % options.length];
+  }
+
+  return sentence;
+}
+
+function restructureCorporateStageSetting(sentence, style = 'natural') {
+  if (!sentence || sentence.length < 25) return sentence;
+
+  // Across modern workplaces / In modern settings / Today, [Subject] [struggle/encounter] [Problems], which [erodes/cuts down] [Target]
+  const m = sentence.match(/^(?:Today|In modern settings|Across modern workplaces),\s+([^,]{3,35})\s+(?:often run into|frequently struggle with|grapple with)\s+([^,]+?)(?:,\s*which|\s*—|\s*\.\s*This)\s*(?:cuts down|reduces|diminishes|erodes)\s+([^.]+)[.!?]?$/i);
+  if (!m) return sentence;
+
+  const [, subject, problems, target] = m;
+  const cleanSubj = subject.trim();
+  const cleanProbs = problems.trim();
+  const cleanTarget = target.trim();
+
+  let options;
+  if (style === 'academic') {
+    options = [
+      `Across contemporary organizational settings, ${cleanSubj} regularly encounter ${cleanProbs}, substantially undermining ${cleanTarget}.`,
+      `The prevalence of ${cleanProbs} in modern work environments presents a persistent friction for ${cleanSubj}, attenuating ${cleanTarget}.`
+    ];
+  } else {
+    options = [
+      `Across modern work environments, ${cleanSubj} constantly battle ${cleanProbs}—eroding the hours needed for ${cleanTarget}.`,
+      `In busy workplaces, ${cleanSubj} frequently get derailed by ${cleanProbs}, which eats away at ${cleanTarget}.`
+    ];
+  }
+
+  return options[Math.abs(sentence.length * 11) % options.length];
 }
 
 function injectRhythmicBurstiness(sents, style, opts = {}) {
@@ -8682,7 +8858,7 @@ function depassivizeClauses(text) {
 }
 
 // 3. Sawtooth Rhythm Enforcer (Micro-Burstiness: alternates short & long sentences)
-// Fixed: supplies grammatical subjects so "which" splits don't leave subjectless fragments
+// Fixed: supplies grammatical subjects so "which" splits don't leave subjectless fragments and preserves correct lowercase for continued verbs
 function enforceSawtoothRhythm(sents) {
   if (sents.length < 3) return sents;
   const out = [];
@@ -8704,7 +8880,10 @@ function enforceSawtoothRhythm(sents) {
           start = 'At the same time, ';
         }
         out.push(h);
-        out.push(start + (t.charAt(0).toUpperCase() + t.slice(1)));
+        const cleanT = (start && start.endsWith(' '))
+          ? (t.charAt(0).toLowerCase() + t.slice(1))
+          : (t.charAt(0).toUpperCase() + t.slice(1));
+        out.push(start + cleanT);
         continue;
       }
     }
@@ -8832,6 +9011,9 @@ function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   // Pass 6: structural rewrites & micro-burstiness
   sents = sents.map(s => softenTransitions(s, style));
   sents = sents.map(s => (Math.random() < 0.7 ? swapSubordinateClause(s) : s));
+  sents = sents.map(s => restructureGerundClauses(s, style));
+  sents = sents.map(s => restructureParticipialFacilitation(s, style));
+  sents = sents.map(s => restructureCorporateStageSetting(s, style));
   sents = sents.flatMap(splitLongSentence);
   sents = dropRecapCloser(sents);
   sents = mergeShortNeighbours(sents);
@@ -9033,8 +9215,8 @@ function buildPrompt(text, style = 'natural', userLockedTerms = []) {
 Original AI: "Artificial intelligence is rapidly transforming modern clinical workflows and patient care. Advanced machine learning models assist radiologists in identifying early-stage tumors and subtle fractures with high diagnostic precision."
 Scholarly Human: "Over the past decade, automated diagnostic tools have steadily transitioned from experimental benchmarks into routine clinical environments. Within radiology departments, deep neural networks now support clinicians by flagging subtle anomalies—such as micro-calcifications and hairline fractures—that might otherwise escape initial review."`
     : `FEW-SHOT REFERENCE (How to rebuild AI text into authentic human prose):
-Original AI: "Effective time management is essential for personal productivity and professional success. In today's fast-paced corporate environment, professionals frequently struggle with context switching and meeting sprawl, which drastically reduces deep work focus. Applying the Eisenhower Matrix helps knowledge workers distinguish between urgent tasks and important long-term deliverables."
-Authentic Human: "Most practitioners learn the hard way that back-to-back meetings and constant message pings kill real focus. When your calendar has no boundaries, deep work is the first thing out the window. That is where something like the Eisenhower Matrix actually helps: it forces you to draw a hard line between true emergencies and the high-value projects that actually matter."`;
+Original AI: "Cloud computing infrastructure provides substantial scalability benefits for modern engineering organizations. Migrating monolithic legacy applications into microservices allows development teams to ship software updates continuously while reducing deployment risks."
+Authentic Human: "Breaking down monolithic systems into cloud-hosted microservices isn't just an architectural flex; it changes how development teams actually work day-to-day. When teams aren't terrified of a single giant deployment taking down production, they can ship small, isolated improvements several times a day without breaking a sweat."`;
 
   return `Rewrite the text below as if you are ${persona}.
 
@@ -9055,7 +9237,7 @@ HOW TO WRITE
 7. Never open with a generic textbook definition (e.g. "X is a framework that...", "X is an interpreted language..."). Open directly with the practical situation, tension, or problem.
 8. Do not open with a framing line and do not end any paragraph with a sentence that sums up or repeats the paragraph. No rhetorical questions, no lists of three adjectives or clauses (no triads), no headings, no markdown.
 
-Return only the rewritten text.
+Return only the rewritten text directly. Do not include any introductory remarks, thinking tags, or meta commentary.
 
 TEXT:
 """
@@ -9295,6 +9477,7 @@ async function callLocalLLMAPI(options) {
             model,
             messages,
             stream: false,
+            think: false,
             options: { temperature: 0.85, top_p: 0.9 }
           })
         });
@@ -9313,6 +9496,7 @@ async function callLocalLLMAPI(options) {
           model,
           prompt: promptText,
           stream: false,
+          think: false,
           options: { temperature: 0.85, top_p: 0.9 }
         })
       });
