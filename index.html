@@ -185,99 +185,227 @@
           </div>
         </div>
 
-        <!-- Main Dual-Pane Studio -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- Main Studio Grid with Sidebar -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
           
-          <!-- Left Pane: Input -->
-          <div class="flex flex-col bg-surface-container-lowest border border-surface-container-high min-h-[480px]">
-            <!-- Input Header -->
-            <div class="flex items-center justify-between px-5 py-3.5 bg-surface-container-low/60 border-b border-surface-container-high">
-              <div class="flex items-center gap-2">
-                <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Input</span>
-                <span class="text-outline-variant font-label-sm text-label-sm">•</span>
-                <span class="font-label-sm text-label-sm text-on-surface-variant">Source Text</span>
-              </div>
-              <div class="flex items-center gap-3 font-label-sm text-label-sm">
-                <button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer" id="btn-load-sample" type="button">
-                  Load sample
-                </button>
-                <span class="text-outline-variant">|</span>
-                <button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer" id="btn-clear-input" type="button">
-                  Clear
-                </button>
-              </div>
-            </div>
-
-            <!-- Textarea -->
-            <div class="flex-1 p-5 flex flex-col">
-              <textarea 
-                class="w-full h-full flex-1 bg-transparent text-primary font-body-md text-body-md placeholder-on-surface-variant/40 resize-none outline-none leading-relaxed" 
-                id="input-text" 
-                placeholder="Paste AI-generated text here (ChatGPT, Claude, Gemini)..."
-                spellcheck="false"
-              ></textarea>
-            </div>
-
-            <!-- Input Footer Meta -->
-            <div class="px-5 py-3 bg-surface-container-low/40 border-t border-surface-container-high flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
-              <div class="flex items-center gap-4">
-                <span id="word-count">0 words</span>
-                <span>•</span>
-                <span id="char-count">0 chars</span>
-              </div>
-              <span class="text-on-surface-variant/70 font-label-sm text-label-sm">Press Ctrl+Enter to convert</span>
-            </div>
-          </div>
-
-          <!-- Right Pane: Output -->
-          <div class="flex flex-col bg-surface-container-lowest border border-surface-container-high min-h-[480px]">
-            <!-- Output Header -->
-            <div class="flex flex-wrap items-center justify-between px-5 py-3.5 bg-surface-container-low/60 border-b border-surface-container-high gap-3">
-              <div class="flex items-center gap-2">
-                <span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-medium">Output</span>
-                <span class="text-outline-variant font-label-sm text-label-sm">•</span>
-                <span class="font-label-sm text-label-sm text-on-surface-variant" id="active-tone-label">Natural Cadence</span>
+          <!-- LEFT SIDEBAR: Glossary Guard & Document Hub -->
+          <aside class="lg:col-span-3 flex flex-col gap-4">
+            
+            <!-- 1. Glossary Guard ("Locked Keywords") Card -->
+            <div class="bg-surface-container-lowest border border-surface-container-high p-4 flex flex-col gap-3">
+              <div class="flex items-center justify-between pb-2 border-b border-surface-container-high">
+                <div class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[17px] text-primary">lock</span>
+                  <span class="font-label-sm uppercase tracking-wider text-primary font-medium">Glossary Guard</span>
+                </div>
+                <span class="text-[10px] px-1.5 py-0.5 bg-surface-container-high text-on-surface-variant font-mono" id="locked-count-badge">0 locked</span>
               </div>
               
-              <!-- Output Utilities -->
-              <div class="flex items-center gap-3 font-label-sm text-label-sm flex-wrap">
-                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer" id="diff-btn" title="Toggle inline diff markup" type="button">
-                  <span class="w-1.5 h-1.5 bg-outline-variant" id="diff-dot"></span>
-                  <span>Diff view</span>
+              <p class="text-[11px] text-on-surface-variant leading-relaxed">
+                Keywords, brand names, or technical terms guaranteed <span class="text-primary font-medium">100% untouched</span> during transformation.
+              </p>
+
+              <!-- Locked Chips Container -->
+              <div class="min-h-[52px] max-h-36 overflow-y-auto p-2 bg-surface-container-low border border-surface-container-highest flex flex-wrap gap-1.5 items-start" id="locked-chips-box">
+                <span class="text-[11px] text-on-surface-variant/50 select-none" id="locked-chips-empty">No locked keywords added</span>
+              </div>
+
+              <!-- Add Chip Input Box -->
+              <div class="flex items-center gap-1.5">
+                <input 
+                  type="text" 
+                  id="locked-keyword-input" 
+                  placeholder="e.g. PyTorch, Qwen, Acme" 
+                  class="flex-1 h-8 px-2.5 bg-surface-container-low border border-surface-container-highest text-primary font-mono text-[11px] placeholder-on-surface-variant/40 outline-none focus:border-primary"
+                />
+                <button type="button" id="btn-add-locked-keyword" class="h-8 px-3 bg-surface-container-high hover:bg-primary hover:text-on-primary text-primary text-[11px] font-medium border border-outline-variant transition-colors cursor-pointer">
+                  + Add
                 </button>
-                <span class="text-outline-variant">|</span>
-                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="refine-btn" title="Perform a 2nd pass polish to vary rhythm further" type="button">
-                  <span class="material-symbols-outlined text-[15px]">autorenew</span>
-                  <span>Refine 2nd Pass</span>
-                </button>
-                <span class="text-outline-variant">|</span>
-                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="verify-btn" title="Verify against live ZeroGPT detector" type="button">
-                  <span class="material-symbols-outlined text-[15px]">verified</span>
-                  <span>Verify Live</span>
-                </button>
-                <span class="text-outline-variant">|</span>
-                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="copy-btn" type="button">
-                  <span class="material-symbols-outlined text-[15px]" id="copy-icon">content_copy</span>
-                  <span id="copy-label">Copy</span>
-                </button>
-                <span class="text-outline-variant">|</span>
-                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="export-pdf-btn" title="Export as clean text / PDF" type="button">
-                  <span class="material-symbols-outlined text-[15px]">download</span>
-                  <span>Export</span>
-                </button>
+              </div>
+
+              <!-- Quick suggestions -->
+              <div class="flex flex-wrap items-center gap-1 pt-0.5 text-[10px] text-on-surface-variant">
+                <span>Quick:</span>
+                <button type="button" class="quick-lock-chip hover:text-primary underline cursor-pointer" data-term="PyTorch">+PyTorch</button>
+                <button type="button" class="quick-lock-chip hover:text-primary underline cursor-pointer" data-term="Ollama">+Ollama</button>
+                <button type="button" class="quick-lock-chip hover:text-primary underline cursor-pointer" data-term="ZeroGPT">+ZeroGPT</button>
+                <button type="button" class="quick-lock-chip hover:text-primary underline cursor-pointer" data-term="API">+API</button>
               </div>
             </div>
 
-            <!-- Output Text / Diff Area -->
-            <div class="flex-1 p-5 flex flex-col relative overflow-y-auto">
-              <div class="text-on-surface-variant/40 font-body-md text-body-md select-none" id="output-placeholder">
-                Humanized output will appear here with dynamic cadence adjustments and verified lexical anchors...
+            <!-- 2. Document Drag & Drop & Section Chunking Card -->
+            <div class="bg-surface-container-lowest border border-surface-container-high p-4 flex flex-col gap-3">
+              <div class="flex items-center justify-between pb-2 border-b border-surface-container-high">
+                <div class="flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[17px] text-primary">upload_file</span>
+                  <span class="font-label-sm uppercase tracking-wider text-primary font-medium">Document Hub</span>
+                </div>
+                <span class="text-[10px] text-on-surface-variant font-mono">.docx, .pdf, .md, .txt</span>
               </div>
-              <div class="hidden text-primary font-body-md text-body-md leading-relaxed whitespace-pre-wrap select-text" id="output-content"></div>
-              <div class="hidden text-primary font-body-md text-body-md leading-relaxed whitespace-pre-wrap select-text" id="output-diff"></div>
+
+              <!-- Drag and Drop Dropzone -->
+              <div 
+                id="doc-dropzone" 
+                class="border-2 border-dashed border-surface-container-highest hover:border-primary/60 bg-surface-container-low/40 p-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-colors text-center"
+              >
+                <span class="material-symbols-outlined text-[24px] text-on-surface-variant">cloud_upload</span>
+                <div class="text-[11px] text-primary font-medium">Drop document here</div>
+                <div class="text-[10px] text-on-surface-variant">or <span class="underline text-primary">Browse file</span></div>
+                <input type="file" id="doc-file-input" accept=".docx,.pdf,.txt,.md" style="display:none;" />
+              </div>
+
+              <!-- Document Loaded Banner (Hidden until doc loaded) -->
+              <div id="doc-active-banner" class="hidden p-2.5 bg-surface-container-low border border-surface-container-highest flex-col gap-1.5 text-xs">
+                <div class="flex items-center justify-between">
+                  <span class="font-medium text-primary truncate max-w-[150px]" id="doc-banner-filename">document.docx</span>
+                  <button type="button" id="btn-doc-remove" class="text-on-surface-variant hover:text-error text-[11px] cursor-pointer">✕ Clear</button>
+                </div>
+                <div class="text-[10px] text-on-surface-variant flex items-center justify-between" id="doc-banner-meta">
+                  <span id="doc-meta-words">0 words</span>
+                  <span id="doc-meta-sections">1 section</span>
+                </div>
+                <!-- Chunk Progress Bar -->
+                <div class="w-full bg-surface-container-highest h-1.5 mt-1 overflow-hidden" id="doc-chunk-progress-track">
+                  <div class="bg-primary h-full transition-all duration-300 w-0" id="doc-chunk-progress-bar"></div>
+                </div>
+                <div class="text-[10px] text-on-surface-variant" id="doc-chunk-status-text">Ready to humanize</div>
+              </div>
             </div>
 
-            <!-- Bottom Verification Strip -->
+            <!-- 3. Local LLM Streaming Status Card -->
+            <div class="bg-surface-container-lowest border border-surface-container-high p-4 flex flex-col gap-2">
+              <div class="flex items-center justify-between pb-2 border-b border-surface-container-high">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span>
+                  <span class="font-label-sm uppercase tracking-wider text-primary font-medium">Real-Time Stream</span>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="toggle-stream" class="sr-only peer" checked>
+                  <div class="w-7 h-4 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
+                </label>
+              </div>
+              <div class="flex items-center justify-between text-[11px] text-on-surface-variant pt-1">
+                <span>Runner Engine:</span>
+                <span class="text-primary font-mono" id="sidebar-runner-label">Ollama</span>
+              </div>
+              <div class="flex items-center justify-between text-[11px] text-on-surface-variant">
+                <span>Hardware Acceleration:</span>
+                <span class="text-emerald-500 font-mono font-medium">GPU (RTX 4060)</span>
+              </div>
+            </div>
+
+          </aside>
+
+          <!-- RIGHT MAIN: DUAL-PANE CONVERTER STUDIO -->
+          <div class="lg:col-span-9 grid grid-cols-1 lg:grid-cols-2 gap-4">
+            
+            <!-- Left Pane: Input -->
+            <div class="flex flex-col bg-surface-container-lowest border border-surface-container-high min-h-[480px] relative" id="input-card">
+              <!-- Input Header -->
+              <div class="flex items-center justify-between px-5 py-3.5 bg-surface-container-low/60 border-b border-surface-container-high">
+                <div class="flex items-center gap-2">
+                  <span class="font-label-sm text-label-sm uppercase tracking-wider text-on-surface-variant font-medium">Input</span>
+                  <span class="text-outline-variant font-label-sm text-label-sm">•</span>
+                  <span class="font-label-sm text-label-sm text-on-surface-variant">Source Text</span>
+                </div>
+                <div class="flex items-center gap-3 font-label-sm text-label-sm">
+                  <button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center gap-1" id="btn-upload-doc" type="button" title="Import Word .docx, PDF, Markdown or Text file">
+                    <span class="material-symbols-outlined text-[14px]">upload_file</span>
+                    <span>Import</span>
+                  </button>
+                  <span class="text-outline-variant">|</span>
+                  <button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer" id="btn-load-sample" type="button">
+                    Load sample
+                  </button>
+                  <span class="text-outline-variant">|</span>
+                  <button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer" id="btn-clear-input" type="button">
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              <!-- Textarea with Drag & Drop Overlay -->
+              <div class="flex-1 p-5 flex flex-col relative">
+                <textarea 
+                  class="w-full h-full flex-1 bg-transparent text-primary font-body-md text-body-md placeholder-on-surface-variant/40 resize-none outline-none leading-relaxed" 
+                  id="input-text" 
+                  placeholder="Paste AI-generated text or drop a .docx, .pdf, .txt, or .md file..."
+                  spellcheck="false"
+                ></textarea>
+                
+                <!-- Drag overlay -->
+                <div class="hidden absolute inset-0 bg-surface-container-lowest/90 border-2 border-dashed border-primary flex-col items-center justify-center gap-2 z-10 transition-all pointer-events-none" id="input-drag-overlay">
+                  <span class="material-symbols-outlined text-[36px] text-primary">upload_file</span>
+                  <div class="font-medium text-primary">Drop document to import & auto-chunk</div>
+                  <div class="text-xs text-on-surface-variant">Supports .docx, .pdf, .txt, .md</div>
+                </div>
+              </div>
+
+              <!-- Input Footer Meta -->
+              <div class="px-5 py-3 bg-surface-container-low/40 border-t border-surface-container-high flex items-center justify-between text-on-surface-variant font-label-sm text-label-sm">
+                <div class="flex items-center gap-4">
+                  <span id="word-count">0 words</span>
+                  <span>•</span>
+                  <span id="char-count">0 chars</span>
+                </div>
+                <span class="text-on-surface-variant/70 font-label-sm text-label-sm">Press Ctrl+Enter to convert</span>
+              </div>
+            </div>
+
+            <!-- Right Pane: Output -->
+            <div class="flex flex-col bg-surface-container-lowest border border-surface-container-high min-h-[480px]">
+              <!-- Output Header -->
+              <div class="flex flex-wrap items-center justify-between px-5 py-3.5 bg-surface-container-low/60 border-b border-surface-container-high gap-3">
+                <div class="flex items-center gap-2">
+                  <span class="font-label-sm text-label-sm uppercase tracking-wider text-primary font-medium">Output</span>
+                  <span class="text-outline-variant font-label-sm text-label-sm">•</span>
+                  <span class="font-label-sm text-label-sm text-on-surface-variant" id="active-tone-label">Natural Cadence</span>
+                </div>
+                
+                <!-- Output Utilities -->
+                <div class="flex items-center gap-3 font-label-sm text-label-sm flex-wrap">
+                  <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5 cursor-pointer" id="diff-btn" title="Toggle inline diff markup" type="button">
+                    <span class="w-1.5 h-1.5 bg-outline-variant" id="diff-dot"></span>
+                    <span>Diff</span>
+                  </button>
+                  <span class="text-outline-variant">|</span>
+                  <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="refine-btn" title="Perform a 2nd pass polish to vary rhythm further" type="button">
+                    <span class="material-symbols-outlined text-[15px]">autorenew</span>
+                    <span>Refine</span>
+                  </button>
+                  <span class="text-outline-variant">|</span>
+                  <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="copy-btn" type="button">
+                    <span class="material-symbols-outlined text-[15px]" id="copy-icon">content_copy</span>
+                    <span id="copy-label">Copy</span>
+                  </button>
+                  <span class="text-outline-variant">|</span>
+                  <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="export-docx-btn" title="Download clean Word (.docx)" type="button">
+                    <span class="material-symbols-outlined text-[15px]">description</span>
+                    <span>DOCX</span>
+                  </button>
+                  <span class="text-outline-variant">|</span>
+                  <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="export-pdf-btn" title="Export as PDF / Print" type="button">
+                    <span class="material-symbols-outlined text-[15px]">picture_as_pdf</span>
+                    <span>PDF</span>
+                  </button>
+                  <span class="text-outline-variant">|</span>
+                  <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 cursor-pointer" id="export-md-btn" title="Download Markdown" type="button">
+                    <span class="material-symbols-outlined text-[15px]">markdown</span>
+                    <span>MD</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Output Text / Diff Area -->
+              <div class="flex-1 p-5 flex flex-col relative overflow-y-auto">
+                <div class="text-on-surface-variant/40 font-body-md text-body-md select-none" id="output-placeholder">
+                  Humanized output will appear here with dynamic cadence adjustments and verified lexical anchors...
+                </div>
+                <div class="hidden text-primary font-body-md text-body-md leading-relaxed whitespace-pre-wrap select-text" id="output-content"></div>
+                <div class="hidden text-primary font-body-md text-body-md leading-relaxed whitespace-pre-wrap select-text" id="output-diff"></div>
+              </div>
+
+              <!-- Bottom Verification Strip -->
             <div class="px-5 py-3 bg-surface-container-low/40 border-t border-surface-container-high flex flex-wrap items-center justify-between gap-3 font-label-sm text-label-sm">
               <div class="flex flex-wrap items-center gap-6">
                 <div class="flex items-center gap-2">

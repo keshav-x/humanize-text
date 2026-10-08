@@ -152,18 +152,50 @@ textarea:focus, input:focus, select:focus {
   animation: pulseDot 1.4s ease-in-out infinite;
 }
 
-/* Print/Export */
-@media print {
-  header, footer, .control-bar, .pane-actions, .hero-section {
-    display: none !important;
-  }
-  body, main {
-    background: #ffffff !important;
-    color: #000000 !important;
-  }
-  #output-content {
-    color: #000000 !important;
-    font-size: 14pt !important;
-    line-height: 1.6 !important;
-  }
+/* Streaming Cursor */
+@keyframes blinkCursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
+
+.streaming-cursor {
+  display: inline-block;
+  color: #ffffff;
+  font-weight: bold;
+  animation: blinkCursor 0.8s infinite;
+  margin-left: 2px;
+}
+
+/* Locked Keyword Chips ("Glossary Guard") */
+.locked-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-container);
+  color: #ffffff;
+  border: 1px solid var(--surface-highest);
+  padding: 2px 8px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  border-radius: 2px;
+  user-select: none;
+}
+
+.locked-chip .chip-remove {
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  font-weight: bold;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.locked-chip .chip-remove:hover {
+  color: #ffb4ab;
+}
+
+/* Drag & Drop active highlight */
+.drag-active {
+  border-color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+

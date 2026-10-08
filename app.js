@@ -16,6 +16,8 @@
   const STORAGE_KEY_LOCAL_ENDPOINT = 'texthuman_local_endpoint';
   const STORAGE_KEY_LOCAL_MODEL = 'texthuman_local_model';
   const STORAGE_KEY_LOCAL_RUNNER = 'texthuman_local_runner';
+  const STORAGE_KEY_LOCKED_TERMS = 'texthuman_locked_terms';
+  const STORAGE_KEY_STREAMING = 'texthuman_streaming_enabled';
 
   // ── Benchmark Test Cases ───────────────────────────────────────────────────
   const BENCHMARKS = [
@@ -84,6 +86,15 @@
   let currentLocalEndpoint = localStorage.getItem(STORAGE_KEY_LOCAL_ENDPOINT) || 'http://localhost:11434';
   let currentLocalModel = localStorage.getItem(STORAGE_KEY_LOCAL_MODEL) || 'llama3.2';
   let currentLocalRunner = localStorage.getItem(STORAGE_KEY_LOCAL_RUNNER) || 'ollama';
+  let isStreamingActive = localStorage.getItem(STORAGE_KEY_STREAMING) !== 'false';
+  let lockedTerms = [];
+  try {
+    const savedLocked = localStorage.getItem(STORAGE_KEY_LOCKED_TERMS);
+    lockedTerms = savedLocked ? JSON.parse(savedLocked) : ['PyTorch', 'ZeroGPT'];
+  } catch (e) {
+    lockedTerms = ['PyTorch', 'ZeroGPT'];
+  }
+  let activeDocument = null; // { filename, text, sections: [] }
   let isDiffActive = false;
   let currentSourceText = '';
   let currentOutputClean = '';
@@ -107,6 +118,28 @@
   const engineBtnAi = document.getElementById('engine-btn-ai');
   const headerEngineLabel = document.getElementById('header-engine-label');
   const enginePill = document.getElementById('btn-engine-pill');
+
+  // Sidebar & Glossary Guard & Document Hub Elements
+  const lockedChipsBox = document.getElementById('locked-chips-box');
+  const lockedKeywordInput = document.getElementById('locked-keyword-input');
+  const btnAddLockedKeyword = document.getElementById('btn-add-locked-keyword');
+  const lockedCountBadge = document.getElementById('locked-count-badge');
+  const toggleStreamCheckbox = document.getElementById('toggle-stream');
+  const sidebarRunnerLabel = document.getElementById('sidebar-runner-label');
+  const docDropzone = document.getElementById('doc-dropzone');
+  const docFileInput = document.getElementById('doc-file-input');
+  const btnUploadDoc = document.getElementById('btn-upload-doc');
+  const docActiveBanner = document.getElementById('doc-active-banner');
+  const docBannerFilename = document.getElementById('doc-banner-filename');
+  const docMetaWords = document.getElementById('doc-meta-words');
+  const docMetaSections = document.getElementById('doc-meta-sections');
+  const docChunkProgressBar = document.getElementById('doc-chunk-progress-bar');
+  const docChunkStatusText = document.getElementById('doc-chunk-status-text');
+  const btnDocRemove = document.getElementById('btn-doc-remove');
+  const inputCard = document.getElementById('input-card');
+  const inputDragOverlay = document.getElementById('input-drag-overlay');
+  const exportDocxBtn = document.getElementById('export-docx-btn');
+  const exportMdBtn = document.getElementById('export-md-btn');
 
   // Local LLM Modal Elements
   const modalOptLocalLlm = document.getElementById('modal-opt-localllm');
@@ -434,6 +467,206 @@
     }
   }
 
+  // ── Glossary Guard Helpers ──────────────────────────────────────────────────
+  function renderLockedChips() {
+    if (!lockedChipsBox) return;
+    if (lockedCountBadge) lockedCountBadge.textContent = `${lockedTerms.length} locked`;
+
+    if (lockedTerms.length === 0) {
+      lockedChipsBox.innerHTML = '<span class="text-[11px] text-on-surface-variant/50 select-none" id="locked-chips-empty">No locked keywords added</span>';
+      return;
+    }
+
+    lockedChipsBox.innerHTML = '';
+    for (const term of lockedTerms) {
+      const chip = document.createElement('span');
+      chip.className = 'locked-chip';
+      chip.innerHTML = `<span>${escapeHtml(term)}</span><span class="chip-remove" data-term="${escapeHtml(term)}" title="Remove keyword">×</span>`;
+      chip.querySelector('.chip-remove').addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeLockedTerm(term);
+      });
+      lockedChipsBox.appendChild(chip);
+    }
+  }
+
+  function addLockedTerm(term) {
+    const t = String(term || '').trim();
+    if (!t) return;
+    if (!lockedTerms.some(x => x.toLowerCase() === t.toLowerCase())) {
+      lockedTerms.push(t);
+      localStorage.setItem(STORAGE_KEY_LOCKED_TERMS, JSON.stringify(lockedTerms));
+      renderLockedChips();
+      showToast(`Locked keyword: "${t}"`);
+    }
+    if (lockedKeywordInput) lockedKeywordInput.value = '';
+  }
+
+  function removeLockedTerm(term) {
+    lockedTerms = lockedTerms.filter(x => x.toLowerCase() !== term.toLowerCase());
+    localStorage.setItem(STORAGE_KEY_LOCKED_TERMS, JSON.stringify(lockedTerms));
+    renderLockedChips();
+    showToast(`Removed keyword: "${term}"`);
+  }
+
+  // ── Document & Chunking Helpers ─────────────────────────────────────────────
+  function chunkTextIntoSections(text, maxWordsPerChunk = 350) {
+    const paragraphs = text.split(/\n\s*\n+/).filter(p => p.trim().length > 0);
+    if (paragraphs.length <= 1) return [text.trim()];
+
+    const chunks = [];
+    let currentChunk = [];
+    let currentCount = 0;
+
+    for (const p of paragraphs) {
+      const wc = TextHumanizer.countWords(p);
+      if (currentCount + wc > maxWordsPerChunk && currentChunk.length > 0) {
+        chunks.push(currentChunk.join('\n\n'));
+        currentChunk = [p];
+        currentCount = wc;
+      } else {
+        currentChunk.push(p);
+        currentCount += wc;
+      }
+    }
+    if (currentChunk.length > 0) {
+      chunks.push(currentChunk.join('\n\n'));
+    }
+    return chunks;
+  }
+
+  function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+  }
+
+  async function handleDocumentFile(file) {
+    if (!file) return;
+    const filename = file.name;
+    const ext = filename.split('.').pop().toLowerCase();
+
+    showToast(`Parsing ${filename}...`);
+    try {
+      let extractedText = '';
+      if (ext === 'txt' || ext === 'md') {
+        extractedText = await file.text();
+      } else if (ext === 'docx' || ext === 'pdf') {
+        const buffer = await file.arrayBuffer();
+        const base64 = arrayBufferToBase64(buffer);
+        const res = await fetch('/api/parse-document', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, base64 })
+        });
+        const json = await res.json();
+        if (!json.success) throw new Error(json.error || 'Failed to parse file');
+        extractedText = json.text;
+      } else {
+        throw new Error(`Unsupported format .${ext}. Please use .docx, .pdf, .txt, or .md.`);
+      }
+
+      if (!extractedText.trim()) throw new Error('No readable text found in document.');
+
+      const sections = chunkTextIntoSections(extractedText, 350);
+      activeDocument = {
+        filename,
+        text: extractedText,
+        sections
+      };
+
+      inputEl.value = extractedText;
+      handleInputUpdate();
+
+      if (docActiveBanner) {
+        docActiveBanner.classList.remove('hidden');
+        docActiveBanner.classList.add('flex');
+        if (docBannerFilename) docBannerFilename.textContent = filename;
+        if (docMetaWords) docMetaWords.textContent = `${TextHumanizer.countWords(extractedText)} words`;
+        if (docMetaSections) docMetaSections.textContent = `${sections.length} section${sections.length > 1 ? 's' : ''}`;
+        if (docChunkProgressBar) docChunkProgressBar.style.width = '0%';
+        if (docChunkStatusText) docChunkStatusText.textContent = sections.length > 1 ? `Ready: ${sections.length} sections to humanize` : 'Document ready';
+      }
+
+      showToast(`Imported ${filename} (${sections.length} sections, ${TextHumanizer.countWords(extractedText)} words)`);
+    } catch (err) {
+      console.error(err);
+      showToast(`Error: ${err.message}`);
+    }
+  }
+
+  function clearActiveDocument() {
+    activeDocument = null;
+    if (docActiveBanner) {
+      docActiveBanner.classList.add('hidden');
+      docActiveBanner.classList.remove('flex');
+    }
+    if (docChunkProgressBar) docChunkProgressBar.style.width = '0%';
+    if (docFileInput) docFileInput.value = '';
+    showToast('Document cleared.');
+  }
+
+  // ── Document Export Helpers ─────────────────────────────────────────────────
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 200);
+  }
+
+  async function exportDocx() {
+    if (!currentOutputClean) {
+      showToast('No output to export yet.');
+      return;
+    }
+    showToast('Generating Word (.docx)...');
+    try {
+      const base = activeDocument?.filename ? activeDocument.filename.replace(/\.[^.]+$/, '') : 'humanized_document';
+      const filename = `${base}_humanized.docx`;
+      const res = await fetch('/api/export-docx', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: currentOutputClean, filename })
+      });
+      if (!res.ok) throw new Error('Export server returned HTTP ' + res.status);
+      const blob = await res.blob();
+      downloadBlob(blob, filename);
+      showToast(`Downloaded ${filename}`);
+    } catch (e) {
+      showToast('DOCX export failed: ' + e.message);
+    }
+  }
+
+  function exportPdf() {
+    if (!currentOutputClean) {
+      showToast('No output to export yet.');
+      return;
+    }
+    window.print();
+  }
+
+  function exportMarkdown() {
+    if (!currentOutputClean) {
+      showToast('No output to export yet.');
+      return;
+    }
+    const base = activeDocument?.filename ? activeDocument.filename.replace(/\.[^.]+$/, '') : 'humanized_document';
+    const filename = `${base}_humanized.md`;
+    const blob = new Blob([currentOutputClean], { type: 'text/markdown;charset=utf-8' });
+    downloadBlob(blob, filename);
+    showToast(`Downloaded ${filename}`);
+  }
+
   // ── Conversion Execution ────────────────────────────────────────────────────
   async function runConversion(isRefinePass = false) {
     const rawInput = isRefinePass ? currentOutputClean : inputEl.value.trim();
@@ -463,26 +696,124 @@
 
     try {
       let resultText = '';
+      const isMultiSection = !isRefinePass && activeDocument && activeDocument.sections && activeDocument.sections.length > 1;
 
-      if (currentEngine === 'localllm' && !isRefinePass) {
-        statusTagText.textContent = `Running Local LLM (${currentLocalModel})...`;
-        const raw = await TextHumanizer.callLocalLLMAPI({
-          endpoint: currentLocalEndpoint,
-          model: currentLocalModel,
-          runner: currentLocalRunner,
-          text: rawInput,
-          style: currentTone
-        });
-        resultText = TextHumanizer.polishText(raw, currentTone);
-      } else if (currentEngine === 'ai' && !isRefinePass) {
-        const model = selectedProvider === 'gemini' ? 'gemini-2.0-flash' : 'llama-3.3-70b-versatile';
-        const raw = selectedProvider === 'gemini'
-          ? await TextHumanizer.callGeminiAPI(key, model, rawInput, currentTone)
-          : await TextHumanizer.callGroqAPI(key, rawInput, currentTone);
-        resultText = TextHumanizer.polishText(raw, currentTone);
+      if (isMultiSection) {
+        const sections = activeDocument.sections;
+        const total = sections.length;
+        const processedSections = [];
+
+        outputPlaceholder.classList.add('hidden');
+        outputDiff.classList.add('hidden');
+        outputContent.classList.remove('hidden');
+        outputContent.textContent = '';
+
+        for (let i = 0; i < total; i++) {
+          const secText = sections[i];
+          const pct = Math.round(((i + 1) / total) * 100);
+          statusTagText.textContent = `Humanizing section ${i + 1} of ${total} (${pct}%)...`;
+          if (docChunkProgressBar) docChunkProgressBar.style.width = `${pct}%`;
+          if (docChunkStatusText) docChunkStatusText.textContent = `Processing section ${i + 1} of ${total} (${pct}%)`;
+
+          let secResult = '';
+          if (currentEngine === 'localllm') {
+            if (isStreamingActive) {
+              const cursor = document.createElement('span');
+              cursor.className = 'streaming-cursor';
+              cursor.textContent = ' ▊';
+              outputContent.appendChild(cursor);
+
+              let secAcc = '';
+              secResult = await TextHumanizer.streamLocalLLMAPI({
+                endpoint: currentLocalEndpoint,
+                model: currentLocalModel,
+                runner: currentLocalRunner,
+                text: secText,
+                style: currentTone,
+                lockedTerms
+              }, (tok, acc) => {
+                secAcc = acc;
+                outputContent.textContent = (processedSections.concat([secAcc])).join('\n\n');
+                outputContent.appendChild(cursor);
+                outputContent.parentElement.scrollTop = outputContent.parentElement.scrollHeight;
+              });
+              cursor.remove();
+            } else {
+              const raw = await TextHumanizer.callLocalLLMAPI({
+                endpoint: currentLocalEndpoint,
+                model: currentLocalModel,
+                runner: currentLocalRunner,
+                text: secText,
+                style: currentTone,
+                lockedTerms
+              });
+              secResult = TextHumanizer.polishText(raw, currentTone);
+            }
+          } else if (currentEngine === 'ai') {
+            const model = selectedProvider === 'gemini' ? 'gemini-2.0-flash' : 'llama-3.3-70b-versatile';
+            const raw = selectedProvider === 'gemini'
+              ? await TextHumanizer.callGeminiAPI(key, model, secText, currentTone, lockedTerms)
+              : await TextHumanizer.callGroqAPI(key, secText, currentTone, lockedTerms);
+            secResult = TextHumanizer.polishText(raw, currentTone);
+          } else {
+            secResult = TextHumanizer.humanizeLocalText(secText, currentTone, { lockedTerms });
+          }
+
+          processedSections.push(secResult);
+          outputContent.textContent = processedSections.join('\n\n');
+        }
+
+        resultText = processedSections.join('\n\n');
+        if (docChunkStatusText) docChunkStatusText.textContent = `Complete: ${total} sections humanized`;
       } else {
-        const opts = isRefinePass ? { synProb: 0.08, noHooks: true } : {};
-        resultText = TextHumanizer.humanizeLocalText(rawInput, currentTone, opts);
+        if (currentEngine === 'localllm' && !isRefinePass) {
+          if (isStreamingActive) {
+            statusTagText.textContent = `Streaming (${currentLocalModel})...`;
+            outputPlaceholder.classList.add('hidden');
+            outputDiff.classList.add('hidden');
+            outputContent.classList.remove('hidden');
+            outputContent.textContent = '';
+
+            const cursor = document.createElement('span');
+            cursor.className = 'streaming-cursor';
+            cursor.textContent = ' ▊';
+            outputContent.appendChild(cursor);
+
+            resultText = await TextHumanizer.streamLocalLLMAPI({
+              endpoint: currentLocalEndpoint,
+              model: currentLocalModel,
+              runner: currentLocalRunner,
+              text: rawInput,
+              style: currentTone,
+              lockedTerms
+            }, (tok, acc) => {
+              outputContent.textContent = acc;
+              outputContent.appendChild(cursor);
+              outputContent.parentElement.scrollTop = outputContent.parentElement.scrollHeight;
+            });
+            cursor.remove();
+          } else {
+            statusTagText.textContent = `Running Local LLM (${currentLocalModel})...`;
+            const raw = await TextHumanizer.callLocalLLMAPI({
+              endpoint: currentLocalEndpoint,
+              model: currentLocalModel,
+              runner: currentLocalRunner,
+              text: rawInput,
+              style: currentTone,
+              lockedTerms
+            });
+            resultText = TextHumanizer.polishText(raw, currentTone);
+          }
+        } else if (currentEngine === 'ai' && !isRefinePass) {
+          const model = selectedProvider === 'gemini' ? 'gemini-2.0-flash' : 'llama-3.3-70b-versatile';
+          const raw = selectedProvider === 'gemini'
+            ? await TextHumanizer.callGeminiAPI(key, model, rawInput, currentTone, lockedTerms)
+            : await TextHumanizer.callGroqAPI(key, rawInput, currentTone, lockedTerms);
+          resultText = TextHumanizer.polishText(raw, currentTone);
+        } else {
+          const opts = isRefinePass ? { synProb: 0.08, noHooks: true, lockedTerms } : { lockedTerms };
+          resultText = TextHumanizer.humanizeLocalText(rawInput, currentTone, opts);
+        }
       }
 
       currentSourceText = inputEl.value.trim();
@@ -501,14 +832,14 @@
         outputContent.classList.remove('hidden');
       }
 
-      // Verification metrics
-      const missingAnchors = TextHumanizer.verifyAnchors(currentSourceText, resultText);
-      const totalAnchors = TextHumanizer.collectAnchors(currentSourceText);
+      // Verification metrics including user locked terms
+      const missingAnchors = TextHumanizer.verifyAnchors(currentSourceText, resultText, lockedTerms);
+      const totalAnchors = TextHumanizer.collectAnchors(currentSourceText).length + lockedTerms.length;
       if (missingAnchors.length === 0) {
-        metricFacts.textContent = `100% (${totalAnchors.length} anchors)`;
+        metricFacts.textContent = `100% (${totalAnchors} protected)`;
         metricFacts.className = 'text-primary font-medium';
       } else {
-        metricFacts.textContent = `${totalAnchors.length - missingAnchors.length}/${totalAnchors.length} retained`;
+        metricFacts.textContent = `${totalAnchors - missingAnchors.length}/${totalAnchors} retained`;
         metricFacts.className = 'text-error font-medium';
       }
 
@@ -1004,8 +1335,74 @@
     diffBtn.addEventListener('click', toggleDiff);
     copyBtn.addEventListener('click', copyOutput);
     verifyBtn.addEventListener('click', runVerifyLive);
-    exportPdfBtn.addEventListener('click', exportOutput);
+    exportDocxBtn?.addEventListener('click', exportDocx);
+    exportPdfBtn?.addEventListener('click', exportPdf);
+    exportMdBtn?.addEventListener('click', exportMarkdown);
     openZeroGptSiteBtn.addEventListener('click', openZeroGptSite);
+
+    // Glossary Guard events
+    btnAddLockedKeyword?.addEventListener('click', () => addLockedTerm(lockedKeywordInput.value));
+    lockedKeywordInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        addLockedTerm(lockedKeywordInput.value);
+      }
+    });
+    document.querySelectorAll('.quick-lock-chip').forEach(btn => {
+      btn.addEventListener('click', () => addLockedTerm(btn.dataset.term));
+    });
+
+    // Real-Time Streaming toggle
+    if (toggleStreamCheckbox) {
+      toggleStreamCheckbox.checked = isStreamingActive;
+      toggleStreamCheckbox.addEventListener('change', () => {
+        isStreamingActive = toggleStreamCheckbox.checked;
+        localStorage.setItem(STORAGE_KEY_STREAMING, isStreamingActive);
+        showToast(`Real-Time Streaming: ${isStreamingActive ? 'Enabled ⚡' : 'Disabled'}`);
+      });
+    }
+
+    // Document Drag & Drop and File Picker events
+    docDropzone?.addEventListener('click', () => docFileInput?.click());
+    btnUploadDoc?.addEventListener('click', () => docFileInput?.click());
+    btnDocRemove?.addEventListener('click', clearActiveDocument);
+    docFileInput?.addEventListener('change', (e) => {
+      if (e.target.files?.[0]) handleDocumentFile(e.target.files[0]);
+    });
+
+    ['dragenter', 'dragover'].forEach(name => {
+      docDropzone?.addEventListener(name, (e) => {
+        e.preventDefault();
+        docDropzone.classList.add('drag-active');
+      });
+      inputCard?.addEventListener(name, (e) => {
+        e.preventDefault();
+        inputDragOverlay?.classList.remove('hidden');
+        inputDragOverlay?.classList.add('flex');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(name => {
+      docDropzone?.addEventListener(name, (e) => {
+        e.preventDefault();
+        docDropzone.classList.remove('drag-active');
+      });
+      inputCard?.addEventListener(name, (e) => {
+        e.preventDefault();
+        inputDragOverlay?.classList.add('hidden');
+        inputDragOverlay?.classList.remove('flex');
+      });
+    });
+
+    docDropzone?.addEventListener('drop', (e) => {
+      const file = e.dataTransfer?.files?.[0];
+      if (file) handleDocumentFile(file);
+    });
+
+    inputCard?.addEventListener('drop', (e) => {
+      const file = e.dataTransfer?.files?.[0];
+      if (file) handleDocumentFile(file);
+    });
 
     btnLoadSample.addEventListener('click', () => loadSampleText());
     btnClearInput.addEventListener('click', clearInput);
@@ -1061,6 +1458,7 @@
   // ── Initialization ──────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', () => {
     initEvents();
+    renderLockedChips();
     setTone(currentTone);
     setEngine(currentEngine);
     updateProviderSelectionUI(selectedProvider);

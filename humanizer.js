@@ -83,9 +83,27 @@ function collectAnchors(text) {
   return Array.from(found);
 }
 
-function extractProtectedEntities(text) {
+function extractProtectedEntities(text, userLockedTerms = []) {
   const protectedItems = [];
   let masked = text;
+
+  // 0. Custom User Locked Keywords ("Glossary Guard")
+  if (Array.isArray(userLockedTerms) && userLockedTerms.length > 0) {
+    const sortedUserTerms = [...userLockedTerms]
+      .map(t => String(t).trim())
+      .filter(t => t.length > 0)
+      .sort((a, b) => b.length - a.length);
+
+    for (const term of sortedUserTerms) {
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(`\\b${escaped}\\b`, 'gi');
+      masked = masked.replace(re, (m) => {
+        const idx = protectedItems.length;
+        protectedItems.push(m);
+        return `___PROT_${idx}___`;
+      });
+    }
+  }
 
   // 1. Quoted direct speech
   masked = masked.replace(/"([^"]+)"|“([^”]+)”/g, (m) => {
@@ -149,9 +167,20 @@ function restoreProtectedEntities(text, protectedItems) {
   return res;
 }
 
-function verifyAnchors(source, output) {
+function verifyAnchors(source, output, userLockedTerms = []) {
   const missing = [];
   const lowerOut = output.toLowerCase();
+
+  // Check user locked terms first
+  if (Array.isArray(userLockedTerms)) {
+    for (const term of userLockedTerms) {
+      const t = String(term).trim();
+      if (t && !lowerOut.includes(t.toLowerCase())) {
+        missing.push(t);
+      }
+    }
+  }
+
   for (const a of collectAnchors(source)) {
     const raw = a.trim();
     const stripped = raw.replace(/^(?:applying|using|by|the|in|at|on|for|with|of)\s+/i, '').replace(/^(?:the)\s+/i, '').trim();
@@ -8784,8 +8813,8 @@ function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   // Pass 1: strip AI tells and domain-level formulaic templates on unmasked text
   let pClean = stripAITells(p);
 
-  // Pass 1b: lock protected entities
-  const { masked, protectedItems } = extractProtectedEntities(pClean);
+  // Pass 1b: lock protected entities (including user-defined Glossary Guard)
+  const { masked, protectedItems } = extractProtectedEntities(pClean, opts.lockedTerms || []);
 
   // Pass 2-3: AI tell patterns (supporting placeholders), collocations, de-passivization, triad breaking & lexicon purge
   let processed = stripAITells(masked);
@@ -8896,23 +8925,25 @@ function polishText(rawText, style = 'natural') {
 
 async function humanizeText(rawText, style = 'natural', options = {}) {
   const engine = options.engine || 'local';
+  const lockedTerms = options.lockedTerms || [];
   if (engine === 'localllm') {
     const raw = await callLocalLLMAPI({
       endpoint: options.localEndpoint || 'http://localhost:11434',
       model: options.localModel || 'llama3.2',
       runner: options.localRunner || 'auto',
       text: rawText,
-      style
+      style,
+      lockedTerms
     });
     return polishText(raw, style);
   }
   if (engine === 'ai' && options.apiKey) {
     const raw = options.provider === 'gemini'
-      ? await callGeminiAPI(options.apiKey, options.model || 'gemini-2.0-flash', rawText, style)
-      : await callGroqAPI(options.apiKey, rawText, style);
+      ? await callGeminiAPI(options.apiKey, options.model || 'gemini-2.0-flash', rawText, style, lockedTerms)
+      : await callGroqAPI(options.apiKey, rawText, style, lockedTerms);
     return polishText(raw, style);
   }
-  return humanizeLocalText(rawText, style);
+  return humanizeLocalText(rawText, style, { lockedTerms });
 }
 
 // ── 12. Randomised Human-Writing Prompt Builder ──────────────────────────────
@@ -8981,7 +9012,7 @@ function countParagraphs(text) {
   return text.trim().split(/\n\s*\n+/).filter(s => s.trim()).length || 1;
 }
 
-function buildPrompt(text, style = 'natural') {
+function buildPrompt(text, style = 'natural', userLockedTerms = []) {
   const key = style === 'academic' ? 'academic' : 'natural';
   const persona = pickRandom(PROMPT_PERSONAS[key]);
   const rhythm = pickRandom(PROMPT_RHYTHMS);
@@ -8992,6 +9023,10 @@ function buildPrompt(text, style = 'natural') {
   const tone = key === 'academic'
     ? 'Keep a formal, objective register, but write like a real scholar, not like an AI template. No contractions.'
     : 'Write in an authentic, conversational voice with contractions where a real person would use them.';
+
+  const lockedSection = (Array.isArray(userLockedTerms) && userLockedTerms.length > 0)
+    ? `\n- GLOSSARY GUARD (STRICT IMMUTABILITY): Under no circumstance alter, synonymize, omit, or rephrase any of the following terms:\n${userLockedTerms.map(t => `  * "${t}"`).join('\n')}\nEvery occurrence must remain 100% character-for-character intact.`
+    : '';
 
   const exemplar = key === 'academic'
     ? `FEW-SHOT REFERENCE (How to rebuild AI text into authentic scholarly prose):
@@ -9006,7 +9041,7 @@ Authentic Human: "Most practitioners learn the hard way that back-to-back meetin
 ${exemplar}
 
 FACTS (non-negotiable)
-- Keep every fact, name, number, date, quote and technical term exactly as given. Add nothing new.
+- Keep every fact, name, number, date, quote and technical term exactly as given. Add nothing new.${lockedSection}
 - Keep exactly ${paras} paragraph${paras > 1 ? 's' : ''}, in the same order, separated by a blank line.
 - Keep the length within 10% of the original (about ${words} words).
 
@@ -9110,10 +9145,10 @@ async function checkZeroGPTLive(text) {
 }
 
 // ── 14. AI Engine API Callers (Gemini & Groq, optional own key) ──────────────
-async function callGeminiAPI(apiKey, model, text, style) {
+async function callGeminiAPI(apiKey, model, text, style, lockedTerms = []) {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const payload = {
-    contents: [{ role: 'user', parts: [{ text: buildPrompt(text, style) }] }],
+    contents: [{ role: 'user', parts: [{ text: buildPrompt(text, style, lockedTerms) }] }],
     generationConfig: { temperature: 1.0, topP: 0.95 }
   };
 
@@ -9132,7 +9167,7 @@ async function callGeminiAPI(apiKey, model, text, style) {
   return cleanAIOutput(candidate);
 }
 
-async function callGroqAPI(apiKey, text, style) {
+async function callGroqAPI(apiKey, text, style, lockedTerms = []) {
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -9141,7 +9176,7 @@ async function callGroqAPI(apiKey, text, style) {
     },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
-      messages: [{ role: 'user', content: buildPrompt(text, style) }],
+      messages: [{ role: 'user', content: buildPrompt(text, style, lockedTerms) }],
       temperature: 1.0
     })
   });
@@ -9207,10 +9242,11 @@ async function callLocalLLMAPI(options) {
     model = 'llama3.2',
     runner = 'auto',
     text,
-    style = 'natural'
+    style = 'natural',
+    lockedTerms = []
   } = options;
 
-  const promptText = buildPrompt(text, style);
+  const promptText = buildPrompt(text, style, lockedTerms);
   const cleanEndpoint = endpoint.replace(/\/+$/, '');
   const isOllama = runner === 'ollama' || (runner === 'auto' && cleanEndpoint.includes('11434'));
 
@@ -9336,6 +9372,104 @@ async function callLocalLLMAPI(options) {
   return cleanAIOutput(content);
 }
 
+// ── 14c. Real-Time Streaming Local LLM Runner ────────────────────────────────
+async function streamLocalLLMAPI(options, onChunk, onDone, onError) {
+  const {
+    endpoint = 'http://localhost:11434',
+    model = 'llama3.2',
+    runner = 'auto',
+    text,
+    style = 'natural',
+    lockedTerms = []
+  } = options;
+
+  const promptText = buildPrompt(text, style, lockedTerms);
+  const cleanEndpoint = endpoint.replace(/\/+$/, '');
+  const isOllama = runner === 'ollama' || (runner === 'auto' && cleanEndpoint.includes('11434'));
+
+  const messages = [
+    {
+      role: 'system',
+      content: 'You are an expert human author and cadence rewriter. Follow the exact instructions, facts, and structure specified by the user.'
+    },
+    { role: 'user', content: promptText }
+  ];
+
+  const proxyBase = typeof window !== 'undefined' ? '' : 'http://localhost:3000';
+
+  try {
+    const res = await fetch(`${proxyBase}/api/local-llm/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        endpoint: cleanEndpoint,
+        model,
+        runner: isOllama ? 'ollama' : 'openai-compatible',
+        prompt: promptText,
+        messages,
+        temperature: 0.85,
+        stream: true
+      })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `Stream failed with HTTP ${res.status}`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let accumulated = '';
+    let thinkingAccumulated = '';
+    let buffer = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // preserve last incomplete chunk
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data:')) continue;
+        const jsonStr = trimmed.slice(5).trim();
+        if (!jsonStr || jsonStr === '[DONE]') continue;
+
+        try {
+          const parsed = JSON.parse(jsonStr);
+          if (parsed.token) {
+            accumulated += parsed.token;
+          }
+          if (parsed.thinking) {
+            thinkingAccumulated += parsed.thinking;
+          }
+          if (onChunk) {
+            onChunk(parsed.token || '', accumulated, thinkingAccumulated);
+          }
+          if (parsed.done) {
+            break;
+          }
+        } catch (e) {}
+      }
+    }
+
+    let candidate = accumulated;
+    if (!candidate.trim() && thinkingAccumulated.trim()) {
+      const paras = thinkingAccumulated.trim().split(/\n\s*\n+/);
+      candidate = paras[paras.length - 1].trim();
+    }
+
+    const cleaned = polishText(cleanAIOutput(candidate), style);
+    if (onDone) onDone(cleaned);
+    return cleaned;
+  } catch (err) {
+    if (onError) onError(err);
+    throw err;
+  }
+}
+
 // Cleans chat-style wrappers from pasted/API replies.
 function cleanAIOutput(output) {
   let cleaned = (output || '').trim();
@@ -9364,6 +9498,7 @@ const _API = {
   callGeminiAPI,
   callGroqAPI,
   callLocalLLMAPI,
+  streamLocalLLMAPI,
   fetchLocalModels,
   verifyAnchors,
   collectAnchors,
