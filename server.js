@@ -704,6 +704,13 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Health check endpoint
+  if (req.url === '/api/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify({ status: 'ok', time: new Date().toISOString() }));
+    return;
+  }
+
   // ZeroGPT relay endpoint
   if (req.url === '/api/zerogpt' && req.method === 'POST') {
     let body = '';

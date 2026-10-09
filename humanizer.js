@@ -2318,6 +2318,54 @@ const AI_LEXICON_PHRASES = [
   {
     "pattern": "\\ba (?:key|crucial|vital|critical) aspect of\\b",
     "replacement": "a core part of"
+  },
+  {
+    "pattern": ",\\s*particularly regarding\\b",
+    "replacement": ", especially when dealing with"
+  },
+  {
+    "pattern": ",\\s*particularly with regard to\\b",
+    "replacement": ", especially around"
+  },
+  {
+    "pattern": "\\bfrequently encounter significant coordination friction\\b",
+    "replacement": "often run into serious coordination roadblocks"
+  },
+  {
+    "pattern": "\\bfrequently encounter\\b",
+    "replacement": "regularly run into"
+  },
+  {
+    "pattern": "\\bencounter significant\\b",
+    "replacement": "face serious"
+  },
+  {
+    "pattern": "\\bintentional communication protocols\\b",
+    "replacement": "deliberate communication routines"
+  },
+  {
+    "pattern": "\\bto preserve cohesive team culture\\b",
+    "replacement": "to keep team culture cohesive"
+  },
+  {
+    "pattern": "\\bgenerate electricity at costs substantially lower than\\b",
+    "replacement": "produce electricity far cheaper than"
+  },
+  {
+    "pattern": "\\bdemands significant infrastructure investments in\\b",
+    "replacement": "requires substantial investment in"
+  },
+  {
+    "pattern": "\\bwith high diagnostic precision\\b",
+    "replacement": "with impressive diagnostic accuracy"
+  },
+  {
+    "pattern": "\\bcareful clinician oversight\\b",
+    "replacement": "diligent clinician oversight"
+  },
+  {
+    "pattern": "\\bto ensure ethical compliance and patient safety\\b",
+    "replacement": "to safeguard patient safety and maintain ethical standards"
   }
 ];
 
@@ -8382,9 +8430,18 @@ function ensureBurstiness(sentences) {
       if (lengths[i] > lengths[longestIdx]) longestIdx = i;
     }
     const target = sentences[longestIdx];
-    if (lengths[longestIdx] >= 16) {
-      const m = target.match(/,\s+(and|but|while|so|which|because)\s+/i);
-      if (m && m.index > 20 && m.index < target.length - 20) {
+    if (lengths[longestIdx] >= 14) {
+      if (target.includes(';')) {
+        const parts = target.split(';');
+        if (parts.length === 2 && parts[0].trim().length > 15 && parts[1].trim().length > 15) {
+          const s1 = parts[0].trim() + '.';
+          const s2 = parts[1].trim().charAt(0).toUpperCase() + parts[1].trim().slice(1);
+          sentences.splice(longestIdx, 1, s1, s2);
+          return sentences;
+        }
+      }
+      const m = target.match(/,\s+(and|but|while|so|which|because|especially|particularly)\s+/i);
+      if (m && m.index > 18 && m.index < target.length - 18) {
         const h = target.slice(0, m.index).trim() + '.';
         const conj = m[1].toLowerCase();
         const t = target.slice(m.index + m[0].length).trim();
@@ -8397,6 +8454,8 @@ function ensureBurstiness(sentences) {
           prefix = 'Meanwhile, ';
         } else if (conj === 'because') {
           prefix = 'This occurs because ';
+        } else if (conj === 'especially' || conj === 'particularly') {
+          prefix = 'This applies especially ';
         }
         const cleanT = (prefix && prefix.endsWith(' '))
           ? (t.charAt(0).toLowerCase() + t.slice(1))
@@ -8640,11 +8699,11 @@ function transformDefinitionOpener(sents, style = 'natural') {
   const s0 = sents[0];
 
   // Pattern A: [Subject] is (essential | vital | crucial | pivotal | critical | fundamental | indispensable) (for | to) [Domain/Outcome]
-  const mEssential = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+(?:is|has become|remains|serves as|acts as|stands as|constitutes)\s+(?:an?\s+)?(essential|vital|crucial|pivotal|critical|fundamental|indispensable)\s+(?:turning point|milestone|driver|prerequisite|element|paradigm|component)?\s*(?:for|in|to)\s+([^.]+)[.!?]?$/i);
+  const mEssential = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+(?:is|are|has become|have become|remains|remain|serves as|serve as|acts as|act as|stands as|stand as|constitutes|constitute|represents|represent|marks|signals)\s+(?:an?\s+)?(essential|vital|crucial|pivotal|critical|fundamental|indispensable)\s*(?:turning point|milestone|driver|prerequisite|element|paradigm|component)?\s*(?:for|in|to)\s+([^.]+)[.!?]?$/i);
   if (mEssential) {
     const subj = mEssential[1].trim();
     const outcome = mEssential[3].trim().replace(/[.!?]+$/, '');
-    const cleanOutcome = outcome.replace(/^(?:maintaining|achieving|supporting|promoting|securing|ensuring)\s+/i, '');
+    const cleanOutcome = outcome.replace(/^(?:combating|tackling|addressing|maintaining|achieving|supporting|promoting|securing|ensuring)\s+/i, '');
     const subjClean = subj.replace(/^(The|A|An)\s+([a-z])/i, (m, p1, p2) => p1.toLowerCase() + ' ' + p2);
     const subjLower = subj.startsWith('___PROT_') ? subj : (subj.charAt(0).toLowerCase() + subj.slice(1));
     const subjAcademic = subj.startsWith('___PROT_') ? subj : (subj.charAt(0).toUpperCase() + subj.slice(1));
@@ -8735,6 +8794,8 @@ function transformDefinitionOpener(sents, style = 'natural') {
     const cleanObj = object.replace(/^(the|a|an)\s+/i, '').replace(/^(?:modern|contemporary|current)\s+/i, '');
     const subjClean = subj.replace(/^(The|A|An)\s+([a-z])/i, (match, p1, p2) => p1.toLowerCase() + ' ' + p2);
 
+    const subjLower = subj.startsWith('___PROT_') ? subj : (subj.charAt(0).toLowerCase() + subj.slice(1));
+
     let options;
     if (style === 'academic') {
       options = [
@@ -8759,7 +8820,49 @@ function transformDefinitionOpener(sents, style = 'natural') {
         `${subj} is quickly reshaping how people approach ${cleanObj}.`,
         `${subj} continues to change ${object} in fundamental ways.`,
         `The way people handle ${cleanObj} is shifting quickly because of ${subjClean}.`,
-        `Few developments are altering ${object} as noticeably as ${subjClean}.`
+        `Few developments are altering ${object} as noticeably as ${subjLower}.`
+      ];
+    }
+    const pick = options[Math.abs(subj.length * 5) % options.length];
+    sents[0] = pick;
+    return sents;
+  }
+
+  // Pattern D: [Subject] (have|has) (fundamentally|significantly...) (altered|transformed|reshaped...) [Object]
+  const mPerf = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+(?:have|has)\s+(?:fundamentally|significantly|dramatically|deeply|substantially|profoundly)?\s*(altered|transformed|reshaped|changed|redefined|disrupted|revolutionized)\s+(.+?)[.!?]?$/i);
+  if (mPerf) {
+    const subj = mPerf[1].trim();
+    const object = mPerf[3].trim();
+    const cleanObj = object.replace(/^(the|a|an)\s+/i, '').replace(/^(?:modern|contemporary|current|traditional|conventional)\s+/i, '');
+    const cleanObjCap = cleanObj.charAt(0).toUpperCase() + cleanObj.slice(1);
+    const subjClean = subj.replace(/^(The|A|An)\s+([a-z])/i, (match, p1, p2) => p1.toLowerCase() + ' ' + p2);
+    const subjLower = subj.startsWith('___PROT_') ? subj : (subj.charAt(0).toLowerCase() + subj.slice(1));
+
+    let options;
+    if (style === 'academic') {
+      options = [
+        `The ongoing evolution of ${object} reflects the decisive impact of ${subjClean}.`,
+        `Across this domain, ${cleanObj} has been systematically reshaped by ${subjClean}.`,
+        `The structure of ${object} highlights a pronounced shift toward ${subjClean}.`
+      ];
+    } else if (style === 'executive') {
+      options = [
+        `Few workplace shifts have altered ${object} as profoundly as ${subjLower}.`,
+        `${subj} continues to force a fundamental rethink of ${cleanObj}.`,
+        `${cleanObjCap} is being aggressively redefined by ${subjLower}.`
+      ];
+    } else if (style === 'casual') {
+      options = [
+        `${subj} completely shook up ${object}.`,
+        `If you look at ${cleanObj}, ${subjClean} really turned things upside down.`,
+        `${subj} has really changed the game for ${cleanObj}.`
+      ];
+    } else {
+      options = [
+        `Few developments have shifted ${object} quite as decisively as ${subjLower}.`,
+        `The landscape of ${cleanObj} looks very different today because of ${subjLower}.`,
+        `Across modern organizations, ${cleanObj} has been fundamentally reshaped by ${subjLower}.`,
+        `${subj} has dramatically upended traditional assumptions about ${cleanObj}.`
       ];
     }
     const pick = options[Math.abs(subj.length * 5) % options.length];
@@ -8772,17 +8875,42 @@ function transformDefinitionOpener(sents, style = 'natural') {
 function restructureGerundClauses(sentence, style = 'natural') {
   if (!sentence || sentence.length < 25) return sentence;
 
-  // By [verb-ing] [Object], [Subject] [can|may|experienced...] [Predicate]
-  const m = sentence.match(/^By\s+([a-z]+ing(?:\s+[a-z]+)?)\s+(.+?),\s+([A-Za-z0-9_\s-]+?)\s+(can|may|could|are able to|experienced|achieved)\s+(.+?)[.!?]?$/i);
+  // By [verb-ing] [Object], [Subject] [can|may|report...] [Predicate]
+  const m = sentence.match(/^By\s+([a-z]+ing(?:\s+[a-z]+)?)\s+(.+?),\s+([A-Za-z0-9_\s-]+?)\s+(can|may|could|are able to|is able to|experienced|achieved|report(?:s|ed)?|see(?:s)?|saw|gain(?:s|ed)?|find(?:s)?|found|enjoy(?:s|ed)?|observe(?:s|ed)?|benefit(?:s|ed)?\s+from|tend(?:s)?\s+to|face(?:s|d)?|maintain(?:s|ed)?|deliver(?:s|ed)?)\s+(.+?)[.!?]?$/i);
   if (!m) return sentence;
 
   const [, gerund, object, subject, modal, predicate] = m;
   const cleanObj = object.trim();
   const cleanSubj = subject.trim();
   const cleanPred = predicate.trim();
+  const gerundLower = gerund.toLowerCase();
 
   let options;
-  if (modal === 'experienced' || modal === 'achieved') {
+  if (/^(?:eliminating|cutting|removing|avoiding|dropping|skipping)\b/i.test(gerundLower)) {
+    options = style === 'academic'
+      ? [
+        `Without ${cleanObj}, ${cleanSubj} ${modal} ${cleanPred}.`,
+        `The elimination of ${cleanObj} enables ${cleanSubj} to ${cleanPred}.`
+      ]
+      : [
+        `Without ${cleanObj}, ${cleanSubj} ${modal} ${cleanPred}.`,
+        `Skipping ${cleanObj} gives ${cleanSubj} ${cleanPred}.`,
+        `Free from ${cleanObj}, ${cleanSubj} ${modal} ${cleanPred}.`,
+        `Once ${cleanSubj} skip ${cleanObj}, they ${modal} ${cleanPred}.`
+      ];
+  } else if (/^(?:report|see|gain|find|enjoy|observe|benefit|face|tend)\b/i.test(modal)) {
+    options = style === 'academic'
+      ? [
+        `Through ${gerund} ${cleanObj}, ${cleanSubj} consistently ${modal} ${cleanPred}.`,
+        `The implementation of ${cleanObj} leads ${cleanSubj} to ${modal} ${cleanPred}.`
+      ]
+      : [
+        `With ${cleanObj} out of the way, ${cleanSubj} ${modal} ${cleanPred}.`,
+        `Thanks to ${gerund} ${cleanObj}, ${cleanSubj} ${modal} ${cleanPred}.`,
+        `Through ${cleanObj}, ${cleanSubj} ${modal} ${cleanPred}.`,
+        `Adopting ${cleanObj} helps ${cleanSubj} ${modal} ${cleanPred}.`
+      ];
+  } else if (modal === 'experienced' || modal === 'achieved') {
     options = style === 'academic'
       ? [
         `Through ${gerund} ${cleanObj}, ${cleanSubj} ${modal} ${cleanPred}.`,
@@ -8858,6 +8986,37 @@ function restructureParticipialFacilitation(sentence, style = 'natural') {
       ];
     }
     return options[Math.abs(sentence.length * 7) % options.length];
+  }
+
+  // Pattern C: [Tool/Subject] assists/helps/allows/enables [Audience] in [verb-ing] / to [verb] [Rest]
+  const mC = sentence.match(/^([A-Z][\w\s-]+?)\s+(assists?|helps?|allows?|enables?|equips?)\s+([A-Za-z0-9_\s-]+?)\s+(?:in\s+([a-z]+ing)|to\s+([a-z]+))\s+(.+?)[.!?]?$/i);
+  if (mC) {
+    const [, tool, helper, audience, gerundVerb, infinitiveVerb, rest] = mC;
+    if (/^(?:Using|Applying|Utilizing|Leveraging|Adopting|Cutting|Free|Without|Skipping)\b/i.test(tool.trim())) return sentence;
+    const verb = (infinitiveVerb || (gerundVerb && gerundToBase(gerundVerb)) || gerundVerb || '').trim();
+    if (verb.length < 3 || /^(?:higher|lower|better|worse|more|less|greater|few|fewer)\b/i.test(verb)) return sentence;
+    const cleanTool = tool.trim();
+    const toolLower = cleanTool.startsWith('___PROT_') ? cleanTool : (cleanTool.charAt(0).toLowerCase() + cleanTool.slice(1));
+    const cleanAudience = audience.trim();
+    const audienceCap = cleanAudience.charAt(0).toUpperCase() + cleanAudience.slice(1);
+    const cleanRest = rest.trim();
+
+    let options;
+    if (style === 'academic') {
+      options = [
+        `Through ${toolLower}, ${cleanAudience} are equipped to systematically ${verb} ${cleanRest}.`,
+        `Deploying ${toolLower} allows ${cleanAudience} to rigorously ${verb} ${cleanRest}.`,
+        `${audienceCap} utilize ${toolLower} to effectively ${verb} ${cleanRest}.`
+      ];
+    } else {
+      options = [
+        `${audienceCap} increasingly rely on ${toolLower} to ${verb} ${cleanRest}.`,
+        `With ${toolLower}, ${cleanAudience} can more reliably ${verb} ${cleanRest}.`,
+        `${audienceCap} turn to ${toolLower} to ${verb} ${cleanRest}.`,
+        `Teams using ${toolLower} can more easily ${verb} ${cleanRest}.`
+      ];
+    }
+    return options[Math.abs(sentence.length * 9) % options.length];
   }
 
   return sentence;
@@ -8961,8 +9120,8 @@ function enforceSawtoothRhythm(sents) {
     const curr = sents[i];
     const next = sents[i + 1];
     if (next && Math.abs(wc(curr) - wc(next)) < 5 && wc(curr) >= 16) {
-      const m = curr.match(/,\s+(and|but|while|so|which)\s+/i);
-      if (m && m.index > 25 && m.index < curr.length - 20) {
+      const m = curr.match(/,\s+(and|but|while|so|which|especially|particularly)\s+/i);
+      if (m && m.index > 20 && m.index < curr.length - 18) {
         const h = curr.slice(0, m.index).trim() + '.';
         const t = curr.slice(m.index + m[0].length).trim();
         const conj = m[1].toLowerCase();
@@ -8973,6 +9132,8 @@ function enforceSawtoothRhythm(sents) {
           start = 'This ';
         } else if (conj === 'while') {
           start = 'At the same time, ';
+        } else if (conj === 'especially' || conj === 'particularly') {
+          start = 'This is especially true ';
         }
         out.push(h);
         const cleanT = (start && start.endsWith(' '))
