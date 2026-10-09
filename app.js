@@ -1407,15 +1407,15 @@
     provGroqBtn?.addEventListener('click', () => updateProviderSelectionUI('groq'));
 
     // Main buttons
-    convertBtn.addEventListener('click', () => runConversion(false));
-    refineBtn.addEventListener('click', () => runConversion(true));
-    diffBtn.addEventListener('click', toggleDiff);
-    copyBtn.addEventListener('click', copyOutput);
-    verifyBtn.addEventListener('click', runVerifyLive);
+    convertBtn?.addEventListener('click', () => runConversion(false));
+    refineBtn?.addEventListener('click', () => runConversion(true));
+    diffBtn?.addEventListener('click', toggleDiff);
+    copyBtn?.addEventListener('click', copyOutput);
+    verifyBtn?.addEventListener('click', runVerifyLive);
     exportDocxBtn?.addEventListener('click', exportDocx);
     exportPdfBtn?.addEventListener('click', exportPdf);
     exportMdBtn?.addEventListener('click', exportMarkdown);
-    openZeroGptSiteBtn.addEventListener('click', openZeroGptSite);
+    openZeroGptSiteBtn?.addEventListener('click', openZeroGptSite);
 
     // Glossary Guard events
     btnAddLockedKeyword?.addEventListener('click', () => addLockedTerm(lockedKeywordInput.value));
@@ -1508,27 +1508,27 @@
     document.getElementById('footer-promptkit')?.addEventListener('click', () => openPromptKitModal());
 
     // Settings modal events
-    btnCloseSettings.addEventListener('click', closeSettingsModal);
-    btnSaveSettings.addEventListener('click', handleSaveSettings);
-    btnTestKey.addEventListener('click', handleTestKey);
-    btnClearKey.addEventListener('click', handleClearKey);
-    modalSettings.addEventListener('click', e => { if (e.target === modalSettings) closeSettingsModal(); });
+    btnCloseSettings?.addEventListener('click', closeSettingsModal);
+    btnSaveSettings?.addEventListener('click', handleSaveSettings);
+    btnTestKey?.addEventListener('click', handleTestKey);
+    btnClearKey?.addEventListener('click', handleClearKey);
+    modalSettings?.addEventListener('click', e => { if (e.target === modalSettings) closeSettingsModal(); });
 
     // Prompt Kit modal events
-    btnClosePromptKit.addEventListener('click', closePromptKitModal);
-    btnCopyPromptKit.addEventListener('click', async () => {
-      await navigator.clipboard.writeText(promptKitTextarea.value);
+    btnClosePromptKit?.addEventListener('click', closePromptKitModal);
+    btnCopyPromptKit?.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(promptKitTextarea?.value || '');
       showToast('Prompt copied to clipboard!');
     });
-    btnOpenChatGPT.addEventListener('click', () => copyAndOpenAiChat('chatgpt'));
-    btnOpenClaude.addEventListener('click', () => copyAndOpenAiChat('claude'));
-    btnOpenGemini.addEventListener('click', () => copyAndOpenAiChat('gemini'));
-    btnFinishReply.addEventListener('click', handleFinishReply);
-    modalPromptKit.addEventListener('click', e => { if (e.target === modalPromptKit) closePromptKitModal(); });
+    btnOpenChatGPT?.addEventListener('click', () => copyAndOpenAiChat('chatgpt'));
+    btnOpenClaude?.addEventListener('click', () => copyAndOpenAiChat('claude'));
+    btnOpenGemini?.addEventListener('click', () => copyAndOpenAiChat('gemini'));
+    btnFinishReply?.addEventListener('click', handleFinishReply);
+    modalPromptKit?.addEventListener('click', e => { if (e.target === modalPromptKit) closePromptKitModal(); });
 
     // Benchmarks modal events
-    btnCloseBenchmarks.addEventListener('click', closeBenchmarksModal);
-    modalBenchmarks.addEventListener('click', e => { if (e.target === modalBenchmarks) closeBenchmarksModal(); });
+    btnCloseBenchmarks?.addEventListener('click', closeBenchmarksModal);
+    modalBenchmarks?.addEventListener('click', e => { if (e.target === modalBenchmarks) closeBenchmarksModal(); });
 
     // Global Keybindings
     document.addEventListener('keydown', e => {
