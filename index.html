@@ -4,6 +4,11 @@
   <meta charset="utf-8"/>
   <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
   <meta content="web_standard" name="shell-type"/>
+  <meta name="description" content="100% Free Open-Source AI Text Humanizer & Precision Cadence Transformer. Transforms AI-generated text into authentic human writing while preserving 100% facts and lexical anchors."/>
+  <meta name="keywords" content="ai text humanizer, text humanizer, bypass ai detector, zerogpt bypass, gptzero bypass, anti-detection, open source ai humanizer"/>
+  <meta property="og:title" content="TextHuman — Precision AI Cadence Transformer"/>
+  <meta property="og:description" content="100% Free Open-Source AI Text Humanizer. Eliminates AI clichés, restores organic sentence cadence, zero drift."/>
+  <meta property="og:type" content="website"/>
   <title>TextHuman — Precision AI Cadence Transformer</title>
   
   <!-- Stitch Typography & Icons -->
@@ -144,18 +149,38 @@
         <div class="flex flex-wrap items-center justify-between gap-4 p-2 bg-surface-container-low border border-surface-container-high">
           <div class="flex flex-wrap items-center gap-3">
             <!-- Segmented Tone Control -->
-            <div aria-label="Tone selector" class="flex items-center gap-1 bg-surface-container-lowest p-1 border border-surface-container-highest" role="tablist">
-              <button class="px-4 py-1.5 font-label-md text-label-md transition-colors bg-primary text-on-primary font-medium" id="tone-natural" type="button">
+            <div aria-label="Tone selector" class="flex items-center gap-1 bg-surface-container-lowest p-1 border border-surface-container-highest flex-wrap" role="tablist">
+              <button class="px-3 py-1.5 font-label-md text-[12px] transition-colors bg-primary text-on-primary font-medium cursor-pointer" id="tone-natural" type="button" title="Everyday authentic human voice">
                 Natural
               </button>
-              <button class="px-4 py-1.5 font-label-md text-label-md transition-colors text-on-surface-variant hover:text-on-surface" id="tone-academic" type="button">
+              <button class="px-3 py-1.5 font-label-md text-[12px] transition-colors text-on-surface-variant hover:text-on-surface cursor-pointer" id="tone-academic" type="button" title="Formal academic tone for essays & papers">
                 Academic
+              </button>
+              <button class="px-3 py-1.5 font-label-md text-[12px] transition-colors text-on-surface-variant hover:text-on-surface cursor-pointer" id="tone-executive" type="button" title="Crisp, high-impact business tone for executive memos">
+                Executive
+              </button>
+              <button class="px-3 py-1.5 font-label-md text-[12px] transition-colors text-on-surface-variant hover:text-on-surface cursor-pointer" id="tone-casual" type="button" title="Conversational, relaxed blog & social voice">
+                Casual
+              </button>
+            </div>
+
+            <!-- Segmented Depth / Intensity Control -->
+            <div aria-label="Depth selector" class="hidden sm:flex items-center gap-1 bg-surface-container-lowest p-1 border border-surface-container-highest" role="tablist">
+              <span class="text-[10px] text-outline px-1.5 uppercase font-mono select-none">Depth:</span>
+              <button class="px-2.5 py-1 text-[11px] font-mono transition-colors bg-surface-container text-primary font-medium cursor-pointer" id="depth-standard" type="button" title="Balanced flow, natural rhythm (4-6% perturbations)">
+                Standard
+              </button>
+              <button class="px-2.5 py-1 text-[11px] font-mono transition-colors text-on-surface-variant hover:text-on-surface cursor-pointer" id="depth-deep" type="button" title="Active clause shifts & higher variance (9-11% perturbations)">
+                Deep
+              </button>
+              <button class="px-2.5 py-1 text-[11px] font-mono transition-colors text-on-surface-variant hover:text-on-surface cursor-pointer" id="depth-stealth" type="button" title="Maximum anti-detection: sawtooth cadence, triad breaking, parentheticals (14-16% perturbations)">
+                Ultra-Stealth
               </button>
             </div>
 
             <!-- Segmented Engine Switcher -->
-            <div aria-label="Engine selector" class="hidden sm:flex items-center gap-1 bg-surface-container-lowest p-1 border border-surface-container-highest">
-              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors bg-surface-container text-primary font-medium" id="engine-btn-local" type="button" title="Fast rule-based syntax & cliché restructuring (100% offline)">
+            <div aria-label="Engine selector" class="hidden md:flex items-center gap-1 bg-surface-container-lowest p-1 border border-surface-container-highest">
+              <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors bg-surface-container text-primary font-medium" id="engine-btn-local" type="button" title="Fast rule-based syntax & cliché restructuring (100% offline, free)">
                 Heuristics
               </button>
               <button class="px-3 py-1.5 font-label-sm text-label-sm transition-colors text-on-surface-variant hover:text-on-surface flex items-center gap-1.5" id="engine-btn-localllm" type="button" title="Private local neural model running on your machine via Ollama or LM Studio">
@@ -324,6 +349,29 @@
                 </div>
               </div>
 
+              <!-- Quick Benchmark Presets Strip -->
+              <div class="flex items-center gap-1.5 px-4 py-2 bg-surface-container-low/40 border-b border-surface-container-high/60 overflow-x-auto text-xs">
+                <span class="text-[10px] text-outline font-mono uppercase shrink-0 select-none">Quick Presets:</span>
+                <button type="button" class="quick-preset-chip px-2 py-0.5 bg-surface-container-lowest border border-surface-container-highest text-on-surface-variant hover:text-primary hover:border-outline text-[11px] font-mono shrink-0 cursor-pointer transition-colors" data-benchmark="0" title="Productivity & Workflow">
+                  ⚡ Productivity
+                </button>
+                <button type="button" class="quick-preset-chip px-2 py-0.5 bg-surface-container-lowest border border-surface-container-highest text-on-surface-variant hover:text-primary hover:border-outline text-[11px] font-mono shrink-0 cursor-pointer transition-colors" data-benchmark="1" title="Software Engineering">
+                  💻 Coding
+                </button>
+                <button type="button" class="quick-preset-chip px-2 py-0.5 bg-surface-container-lowest border border-surface-container-highest text-on-surface-variant hover:text-primary hover:border-outline text-[11px] font-mono shrink-0 cursor-pointer transition-colors" data-benchmark="3" title="Renewable Energy">
+                  🌱 Energy
+                </button>
+                <button type="button" class="quick-preset-chip px-2 py-0.5 bg-surface-container-lowest border border-surface-container-highest text-on-surface-variant hover:text-primary hover:border-outline text-[11px] font-mono shrink-0 cursor-pointer transition-colors" data-benchmark="4" title="Workplace Culture">
+                  🏢 Remote
+                </button>
+                <button type="button" class="quick-preset-chip px-2 py-0.5 bg-surface-container-lowest border border-surface-container-highest text-on-surface-variant hover:text-primary hover:border-outline text-[11px] font-mono shrink-0 cursor-pointer transition-colors" data-benchmark="5" title="Healthcare Diagnostics">
+                  🩺 Health AI
+                </button>
+                <button type="button" class="quick-preset-chip px-2 py-0.5 bg-surface-container-lowest border border-surface-container-highest text-on-surface-variant hover:text-primary hover:border-outline text-[11px] font-mono shrink-0 cursor-pointer transition-colors" data-benchmark="6" title="Zero Trust Security">
+                  🛡️ Security
+                </button>
+              </div>
+
               <!-- Textarea with Drag & Drop Overlay -->
               <div class="flex-1 p-5 flex flex-col relative">
                 <textarea 
@@ -405,33 +453,62 @@
                 <div class="hidden text-primary font-body-md text-body-md leading-relaxed whitespace-pre-wrap select-text" id="output-diff"></div>
               </div>
 
-              <!-- Bottom Verification Strip -->
-            <div class="px-5 py-3 bg-surface-container-low/40 border-t border-surface-container-high flex flex-wrap items-center justify-between gap-3 font-label-sm text-label-sm">
-              <div class="flex flex-wrap items-center gap-6">
-                <div class="flex items-center gap-2">
-                  <span class="text-on-surface-variant">ZeroGPT Live:</span>
-                  <span class="text-primary font-medium" id="metric-zerogpt">--</span>
+              <!-- Bottom Verification Strip: AI Detection Defense Radar -->
+              <div class="px-5 py-3.5 bg-surface-container-low/50 border-t border-surface-container-high flex flex-col gap-2.5 font-label-sm text-label-sm">
+                <!-- Row 1: Real-time Detector Badges -->
+                <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-surface-container-high/60">
+                  <div class="flex flex-wrap items-center gap-2.5">
+                    <span class="text-[10px] text-outline uppercase font-mono tracking-wider select-none">AI Radar:</span>
+                    
+                    <!-- ZeroGPT Badge -->
+                    <div class="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container-lowest border border-surface-container-highest text-xs">
+                      <span class="text-on-surface-variant text-[11px]">ZeroGPT:</span>
+                      <span class="text-primary font-medium font-mono text-[11px]" id="metric-zerogpt">--</span>
+                    </div>
+
+                    <!-- Grammarly / RoBERTa Badge -->
+                    <div class="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container-lowest border border-surface-container-highest text-xs">
+                      <span class="text-on-surface-variant text-[11px]">Grammarly AI:</span>
+                      <span class="text-emerald-400 font-medium font-mono text-[11px]" id="metric-grammarly">Trope-Free</span>
+                    </div>
+
+                    <!-- GPTZero Cadence Badge -->
+                    <div class="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container-lowest border border-surface-container-highest text-xs">
+                      <span class="text-on-surface-variant text-[11px]">GPTZero:</span>
+                      <span class="text-emerald-400 font-medium font-mono text-[11px]" id="metric-gptzero">High Perplexity</span>
+                    </div>
+
+                    <!-- Turnitin / CopyLeaks Badge -->
+                    <div class="flex items-center gap-1.5 px-2 py-0.5 bg-surface-container-lowest border border-surface-container-highest text-xs">
+                      <span class="text-on-surface-variant text-[11px]">Turnitin:</span>
+                      <span class="text-emerald-400 font-medium font-mono text-[11px]" id="metric-turnitin">Clean Flow</span>
+                    </div>
+                  </div>
+
+                  <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 text-[11px] cursor-pointer" id="btn-open-zerogpt-site" title="Copy output and test on official ZeroGPT website" type="button">
+                    <span class="material-symbols-outlined text-[13px]">open_in_new</span>
+                    <span>Test on ZeroGPT.com</span>
+                  </button>
                 </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-on-surface-variant">Burstiness Cadence:</span>
-                  <span class="text-primary font-medium" id="metric-cadence">--</span>
-                </div>
-                <div class="flex items-center gap-2">
-                  <span class="text-on-surface-variant">Facts Preserved:</span>
-                  <span class="text-primary font-medium" id="metric-facts">--</span>
+
+                <!-- Row 2: Linguistic Metrics & Anchor Retention -->
+                <div class="flex flex-wrap items-center justify-between gap-4 text-xs">
+                  <div class="flex flex-wrap items-center gap-5">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-on-surface-variant">Burstiness Cadence:</span>
+                      <span class="text-primary font-medium font-mono" id="metric-cadence">--</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-on-surface-variant">Facts Preserved:</span>
+                      <span class="text-primary font-medium font-mono" id="metric-facts">--</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-1.5 text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[14px] text-emerald-400">verified</span>
+                    <span class="text-[11px]">100% Anchor Guarantee · Zero Hallucination</span>
+                  </div>
                 </div>
               </div>
-              <div class="flex items-center gap-3">
-                <button class="text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1 text-[11px]" id="btn-open-zerogpt-site" title="Copy output and test on official ZeroGPT website" type="button">
-                  <span class="material-symbols-outlined text-[13px]">open_in_new</span>
-                  <span>Open ZeroGPT</span>
-                </button>
-                <div class="flex items-center gap-1.5 text-on-surface-variant border-l border-surface-container-highest pl-3">
-                  <span class="material-symbols-outlined text-[14px]">verified</span>
-                  <span>Zero Drift</span>
-                </div>
-              </div>
-            </div>
 
           </div>
         </div>

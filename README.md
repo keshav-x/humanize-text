@@ -1,7 +1,29 @@
-# TextHuman
+# TextHuman ⚡
+
+[![Live Web App](https://img.shields.io/badge/🚀_Live_Web_App-Open_Online-white?style=for-the-badge&logo=githubpages&logoColor=black)](https://keshav-x.github.io/humanize-text/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg?style=for-the-badge)](LICENSE)
+[![Zero Cost](https://img.shields.io/badge/Cost-$0_Free_Forever-emerald?style=for-the-badge)](https://keshav-x.github.io/humanize-text/)
+[![No API Key Needed](https://img.shields.io/badge/API_Keys-Zero_Required-blue?style=for-the-badge)](https://keshav-x.github.io/humanize-text/)
 
 > **High-Performance AI Text Humanizer & Linguistic Anti-Detection Engine**  
 > *Zero dependencies · 100% Client-side & Node.js · 100% Factual Anchor Retention · Completely Free*
+
+### 👉 **[Try the Live Studio in your Browser (No Install Needed)](https://keshav-x.github.io/humanize-text/)**
+
+---
+
+## ⚡ Quick Start in 3 Seconds
+
+### Option 1: Instant Browser Studio (Zero Installation)
+Open **[https://keshav-x.github.io/humanize-text/](https://keshav-x.github.io/humanize-text/)** — paste your AI draft and click **Humanize Text**. Everything runs 100% privately in your browser with zero network latency.
+
+### Option 2: Run Locally (Local Server + ZeroGPT Proxy + Document Hub)
+```bash
+git clone https://github.com/keshav-x/humanize-text.git
+cd humanize-text
+node server.js
+```
+Open `http://localhost:3000` in your browser.
 
 ---
 
@@ -130,16 +152,27 @@ Automatically detects and collapses AI-favored rhetorical antitheses (`is not bo
 
 | Mode | Target Register | Contractions | Syntactic Patterns |
 | :--- | :--- | :---: | :--- |
-| **Natural** | Articles, blogs, essays, workplace communications | Permitted (`it's`, `don't`, `we've`) | Conversational active voice, punchy hooks, parenthetical qualifications, vivid everyday idioms |
-| **Academic** | Research papers, journals, thesis sections, formal reports | Prohibited (`do not`, `it is`) | Objective scholarly register, hedged claims (*"tends to indicate"*), complex subordinate clauses, zero slang |
+| **Natural** | Articles, blogs, essays, general communication | Permitted (`it's`, `don't`) | Conversational active voice, punchy hooks, parenthetical qualifications |
+| **Academic** | Research papers, journals, theses, formal reports | Prohibited (`do not`, `it is`) | Objective scholarly register, hedged claims (*"tends to indicate"*), formal syntax |
+| **Executive** | C-suite memos, business briefs, stakeholder updates | Permitted | Crisp operational outcomes, active decision-making levers, high impact |
+| **Casual** | Blog posts, newsletters, social copy, discussions | Relaxed (`you're`, `it's`) | Approachable, conversational flow, idiomatic ease, zero pretension |
 
-### 2. Engine Execution Modes
+### 2. Cadence Depth & Anti-Detection Intensity
+
+| Depth | Target Variance | Perturbation | Best For |
+| :--- | :---: | :---: | :--- |
+| **Standard** | Balanced | Light (4–6%) | Everyday humanization where minimal phrasing change is preferred |
+| **Deep** | High Cadence | Moderate (8–10%) | Essays, articles, and long-form content needing strong syntactic diversity |
+| **Ultra-Stealth** | Maximum Sawtooth | Advanced (14–16%) | Strict detectors (Turnitin, GPTZero, ZeroGPT): full active inversion & rhythm jitter |
+
+### 3. Engine Execution Modes
 
 | Engine | Execution Environment | Keys Required | Latency | Features |
 | :--- | :--- | :---: | :---: | :--- |
-| **Local (Instant)** | 100% In-Browser / Node.js | **None** | **< 20ms** | Complete privacy, offline processing, 0% hallucination risk |
-| **Prompt Kit (Best)** | Meta-Prompt + External LLM | **None** | Manual | Maximum fluency, randomized adversarial personas, strict fact audit |
-| **Own API Key** | Client-to-API Direct | Free/Paid Key | 1–2s | Google Gemini 2.0 Flash or Groq Llama 3.3 70B direct streaming |
+| **Heuristics (Offline)** | 100% In-Browser / Node.js | **None** | **< 20ms** | Complete privacy, offline processing, 0% hallucination risk |
+| **Local LLM (Private)** | Ollama / LM Studio (GPU) | **None** | Real-time | Private neural models (Llama 3.2, Qwen 2.5, Mistral) on your machine |
+| **Prompt Kit (Meta-Prompt)** | ChatGPT / Claude / Gemini | **None** | Manual | Adversarial humanizer persona prompts with step-by-step fact audits |
+| **Cloud AI (Direct Key)** | Google Gemini / Groq Cloud | Free Key | 1–2s | Google Gemini 2.0 Flash or Groq Llama 3.3 70B streaming |
 
 ---
 

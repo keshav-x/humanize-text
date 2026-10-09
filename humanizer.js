@@ -2331,12 +2331,36 @@ const AI_LEXICON_WORDS = [
     "replacement": "use"
   },
   {
-    "pattern": "\\bfacilitate(?:d|s|ing)?\\b",
-    "replacement": "help"
+    "pattern": "\\bfacilitates\\b",
+    "replacement": "enables"
   },
   {
-    "pattern": "\\bfoster(?:ed|s|ing)?\\b",
-    "replacement": "build"
+    "pattern": "\\bfacilitated\\b",
+    "replacement": "enabled"
+  },
+  {
+    "pattern": "\\bfacilitating\\b",
+    "replacement": "enabling"
+  },
+  {
+    "pattern": "\\bfacilitate\\b",
+    "replacement": "support"
+  },
+  {
+    "pattern": "\\bfosters\\b",
+    "replacement": "encourages"
+  },
+  {
+    "pattern": "\\bfostered\\b",
+    "replacement": "encouraged"
+  },
+  {
+    "pattern": "\\bfostering\\b",
+    "replacement": "encouraging"
+  },
+  {
+    "pattern": "\\bfoster\\b",
+    "replacement": "encourage"
   },
   {
     "pattern": "\\bcultivat(?:e|ed|es|ing)\\b",
@@ -2392,11 +2416,11 @@ const AI_LEXICON_WORDS = [
   },
   {
     "pattern": "\\bholistically\\b",
-    "replacement": "fully"
+    "replacement": "comprehensively"
   },
   {
     "pattern": "\\bholistic\\b",
-    "replacement": "whole"
+    "replacement": "well-rounded"
   },
   {
     "pattern": "\\bcutting-edge\\b",
@@ -8291,7 +8315,9 @@ function swapSafeSynonyms(text, probability = 0.12) {
       'microservice architecture', 'cloud computing', 'data pipeline', 'neural network',
       'natural language processing', 'large language model', 'generative ai',
       'reinforcement learning', 'continuous integration', 'continuous delivery',
-      'professional success', 'personal productivity'
+      'professional success', 'personal productivity', 'artificial intelligence',
+      'educational technology', 'student development', 'higher education',
+      'digital classrooms', 'machine learning', 'intelligent tutoring'
     ];
     const surrounding = text.toLowerCase().slice(Math.max(0, fullTextSoFar.length - 25), fullTextSoFar.length + 30);
     if (COMPOUND_BLACKLIST.some(phrase => surrounding.includes(phrase))) {
@@ -8631,6 +8657,20 @@ function transformDefinitionOpener(sents, style = 'natural') {
         `Within this domain, ${subjLower} functions as an indispensable driver of ${cleanOutcome}.`,
         `The realization of ${cleanOutcome} depends substantially upon ${subjLower}.`
       ];
+    } else if (style === 'executive') {
+      options = [
+        `${subjClean} is critical to driving ${cleanOutcome}.`,
+        `Delivering ${cleanOutcome} starts directly with ${subjLower}.`,
+        `${subj} remains the primary lever for ${cleanOutcome}.`,
+        `Sustaining ${cleanOutcome} requires an active focus on ${subjLower}.`
+      ];
+    } else if (style === 'casual') {
+      options = [
+        `If you care about ${cleanOutcome}, you really need ${subjLower}.`,
+        `Honestly, ${cleanOutcome} mostly comes down to ${subjLower}.`,
+        `Without ${subjLower}, keeping up with ${cleanOutcome} turns into an uphill battle.`,
+        `Getting a good handle on ${subjLower} makes all the difference for ${cleanOutcome}.`
+      ];
     } else {
       options = [
         `Few things influence ${cleanOutcome} more directly than ${subjLower}.`,
@@ -8644,33 +8684,87 @@ function transformDefinitionOpener(sents, style = 'natural') {
     return sents;
   }
 
-  // Pattern B: [Subject] is (a | an | the) [Category] that [Description]
-  const m = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+(is|represents|denotes|comprises)\s+(?:(an?|the)\s+)?(.*)$/i);
+  // Pattern B: [Subject] is (a | an | the) [Category Noun] (that | which | used to | designed to | intended to) [Description]
+  const m = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+(is|represents|denotes|comprises)\s+(an?|the)\s+([a-z-]+(?:\s+[a-z-]+){0,2})\s+(that|which|used to|designed to|intended to)\s+(.*)$/i);
   if (m) {
-    let subj = m[1].trim();
-    const art = m[3] ? m[3].trim() + ' ' : '';
-    const rest = m[4].trim().replace(/[.!?]+$/, '');
+    const subj = m[1].trim();
+    const art = m[3].trim() + ' ';
+    const cat = m[4].trim() + ' ';
+    const rel = m[5].trim() + ' ';
+    const rest = m[6].trim().replace(/[.!?]+$/, '');
 
     const subjClean = subj.replace(/^(The|A|An)\s+([a-z])/i, (match, p1, p2) => p1.toLowerCase() + ' ' + p2);
 
     let options;
     if (style === 'academic') {
       options = [
-        `Fundamentally, ${subjClean} functions as ${art}${rest}.`,
-        `In operational terms, ${subjClean} serves as ${art}${rest}.`,
-        `At its core, ${subjClean} operates as ${art}${rest}.`,
-        `Practically speaking, ${subjClean} acts as ${art}${rest}.`
+        `Fundamentally, ${subjClean} functions as ${art}${cat}${rel}${rest}.`,
+        `In operational terms, ${subjClean} serves as ${art}${cat}${rel}${rest}.`,
+        `At its core, ${subjClean} operates as ${art}${cat}${rel}${rest}.`
+      ];
+    } else if (style === 'executive') {
+      options = [
+        `In practice, ${subjClean} serves as ${art}${cat}${rel}${rest}.`,
+        `Operationally, ${subjClean} functions as ${art}${cat}${rel}${rest}.`,
+        `${subjClean} provides ${art}${cat}${rel}${rest}.`
+      ];
+    } else if (style === 'casual') {
+      options = [
+        `Basically, ${subjClean} is ${art}${cat}${rel}${rest}.`,
+        `Think of ${subjClean} as ${art}${cat}${rel}${rest}.`,
+        `${subjClean} pretty much acts as ${art}${cat}${rel}${rest}.`
       ];
     } else {
       options = [
-        `At its core, ${subjClean} operates as ${art}${rest}.`,
-        `In practical terms, ${subjClean} works as ${art}${rest}.`,
-        `When you look at ${subjClean}, it basically acts as ${art}${rest}.`,
-        `Understanding ${subjClean} comes down to how it works: it functions as ${art}${rest}.`
+        `At its core, ${subjClean} functions as ${art}${cat}${rel}${rest}.`,
+        `In practical terms, ${subjClean} serves as ${art}${cat}${rel}${rest}.`,
+        `${subjClean} essentially acts as ${art}${cat}${rel}${rest}.`,
+        `When looking at ${subjClean}, it basically operates as ${art}${cat}${rel}${rest}.`
       ];
     }
     const pick = options[Math.abs(subj.length * 3) % options.length];
     sents[0] = pick;
+    return sents;
+  }
+
+  // Pattern C: [Subject] is (rapidly/increasingly...) (transforming/reshaping...) [Object]
+  const mAction = s0.match(/^((?:___PROT_\d+___|[A-Z][\w\s-]+?))\s+is\s+(?:(rapidly|increasingly|steadily|quietly)\s+)?(transforming|reshaping|changing|driving|altering|revolutionizing|redefining)\s+(.+?)[.!?]?$/i);
+  if (mAction) {
+    const subj = mAction[1].trim();
+    const object = mAction[4].trim();
+    const cleanObj = object.replace(/^(the|a|an)\s+/i, '').replace(/^(?:modern|contemporary|current)\s+/i, '');
+    const subjClean = subj.replace(/^(The|A|An)\s+([a-z])/i, (match, p1, p2) => p1.toLowerCase() + ' ' + p2);
+
+    let options;
+    if (style === 'academic') {
+      options = [
+        `${subj} increasingly informs and reorganizes contemporary ${cleanObj}.`,
+        `The ongoing evolution of ${object} reflects the significant impact of ${subjClean}.`,
+        `${subj} continues to systematically reshape ${object}.`
+      ];
+    } else if (style === 'executive') {
+      options = [
+        `${subj} is fundamentally accelerating ${object}.`,
+        `Today's ${cleanObj} is being actively reshaped by ${subjClean}.`,
+        `${subj} continues to drive major shifts across ${object}.`
+      ];
+    } else if (style === 'casual') {
+      options = [
+        `${subj} is shaking up ${object} in a big way.`,
+        `You can really see how ${subjClean} is changing ${object}.`,
+        `${subj} is totally changing the game for ${cleanObj}.`
+      ];
+    } else {
+      options = [
+        `${subj} is quickly reshaping how people approach ${cleanObj}.`,
+        `${subj} continues to change ${object} in fundamental ways.`,
+        `The way people handle ${cleanObj} is shifting quickly because of ${subjClean}.`,
+        `Few developments are altering ${object} as noticeably as ${subjClean}.`
+      ];
+    }
+    const pick = options[Math.abs(subj.length * 5) % options.length];
+    sents[0] = pick;
+    return sents;
   }
   return sents;
 }
@@ -8706,9 +8800,10 @@ function restructureGerundClauses(sentence, style = 'natural') {
     ];
   } else {
     options = [
-      `Setting up ${cleanObj} allows ${cleanSubj} to ${cleanPred}.`,
-      `When ${cleanSubj} establish ${cleanObj}, they can ${cleanPred}.`,
-      `With ${cleanObj} firmly in place, ${cleanSubj} can ${cleanPred}.`
+      `When ${cleanSubj} bring ${cleanObj}, they can ${cleanPred}.`,
+      `By adopting ${cleanObj}, ${cleanSubj} are able to ${cleanPred}.`,
+      `With ${cleanObj} in place, ${cleanSubj} can more easily ${cleanPred}.`,
+      `Integrating ${cleanObj} enables ${cleanSubj} to ${cleanPred}.`
     ];
   }
 
@@ -8973,8 +9068,13 @@ function applyAcademicRestructuring(sents) {
 
 function restructureArbitraryParagraph(paragraph, style, opts = {}) {
   let p = paragraph.trim();
-  if (!p) return '';
-  const synProb = typeof opts.synProb === 'number' ? opts.synProb : 0.05;
+  let synProb = typeof opts.synProb === 'number' ? opts.synProb : 0.05;
+  const intensity = opts.intensity || 'standard';
+  if (intensity === 'deep') {
+    synProb = Math.max(synProb, 0.09);
+  } else if (intensity === 'stealth') {
+    synProb = Math.max(synProb, 0.14);
+  }
 
   const isListItem = opts.isListItem || /^\s*([*•\-\d]+\.?|[a-zA-Z]\))\s+/.test(p);
   const currentOpts = { ...opts, isListItem };

@@ -18,6 +18,7 @@
   const STORAGE_KEY_LOCAL_RUNNER = 'texthuman_local_runner';
   const STORAGE_KEY_LOCKED_TERMS = 'texthuman_locked_terms';
   const STORAGE_KEY_STREAMING = 'texthuman_streaming_enabled';
+  const STORAGE_KEY_INTENSITY = 'texthuman_intensity';
 
   // ── Benchmark Test Cases ───────────────────────────────────────────────────
   const BENCHMARKS = [
@@ -81,6 +82,8 @@
 
   // ── State ───────────────────────────────────────────────────────────────────
   let currentTone = localStorage.getItem(STORAGE_KEY_STYLE) || 'natural';
+  let currentIntensity = localStorage.getItem(STORAGE_KEY_INTENSITY) || 'standard';
+  let currentSampleIndex = 0;
   let currentEngine = localStorage.getItem(STORAGE_KEY_ENGINE) || 'local';
   let selectedProvider = localStorage.getItem(STORAGE_KEY_PROVIDER) || 'gemini';
   let currentLocalEndpoint = localStorage.getItem(STORAGE_KEY_LOCAL_ENDPOINT) || 'http://localhost:11434';
@@ -110,7 +113,13 @@
   
   const toneNaturalBtn = document.getElementById('tone-natural');
   const toneAcademicBtn = document.getElementById('tone-academic');
+  const toneExecutiveBtn = document.getElementById('tone-executive');
+  const toneCasualBtn = document.getElementById('tone-casual');
   const activeToneLabel = document.getElementById('active-tone-label');
+
+  const depthStandardBtn = document.getElementById('depth-standard');
+  const depthDeepBtn = document.getElementById('depth-deep');
+  const depthStealthBtn = document.getElementById('depth-stealth');
 
   const engineBtnLocal = document.getElementById('engine-btn-local');
   const engineBtnLocalLlm = document.getElementById('engine-btn-localllm');
@@ -170,6 +179,9 @@
   const openZeroGptSiteBtn = document.getElementById('btn-open-zerogpt-site');
 
   const metricZeroGpt = document.getElementById('metric-zerogpt');
+  const metricGrammarly = document.getElementById('metric-grammarly');
+  const metricGptzero = document.getElementById('metric-gptzero');
+  const metricTurnitin = document.getElementById('metric-turnitin');
   const metricCadence = document.getElementById('metric-cadence');
   const metricFacts = document.getElementById('metric-facts');
 
@@ -306,15 +318,49 @@
     currentTone = tone;
     localStorage.setItem(STORAGE_KEY_STYLE, tone);
 
-    if (tone === 'natural') {
-      toneNaturalBtn.className = 'px-4 py-1.5 font-label-md text-label-md transition-colors bg-primary text-on-primary font-medium';
-      toneAcademicBtn.className = 'px-4 py-1.5 font-label-md text-label-md transition-colors text-on-surface-variant hover:text-on-surface';
-      activeToneLabel.textContent = 'Natural Cadence';
-    } else {
-      toneAcademicBtn.className = 'px-4 py-1.5 font-label-md text-label-md transition-colors bg-primary text-on-primary font-medium';
-      toneNaturalBtn.className = 'px-4 py-1.5 font-label-md text-label-md transition-colors text-on-surface-variant hover:text-on-surface';
-      activeToneLabel.textContent = 'Academic Cadence';
+    const tones = [
+      { id: 'natural', btn: toneNaturalBtn, label: 'Natural Cadence' },
+      { id: 'academic', btn: toneAcademicBtn, label: 'Academic Rigor' },
+      { id: 'executive', btn: toneExecutiveBtn, label: 'Executive Impact' },
+      { id: 'casual', btn: toneCasualBtn, label: 'Casual Conversational' }
+    ];
+
+    tones.forEach(t => {
+      if (t.btn) {
+        if (t.id === tone) {
+          t.btn.className = 'px-3 py-1.5 font-label-md text-[12px] transition-colors bg-primary text-on-primary font-medium cursor-pointer';
+          if (activeToneLabel) activeToneLabel.textContent = t.label;
+        } else {
+          t.btn.className = 'px-3 py-1.5 font-label-md text-[12px] transition-colors text-on-surface-variant hover:text-on-surface cursor-pointer';
+        }
+      }
+    });
+
+    if (currentOutputClean) {
+      runConversion();
     }
+  }
+
+  // ── Depth / Intensity Switching ─────────────────────────────────────────────
+  function setDepth(intensity) {
+    currentIntensity = intensity;
+    localStorage.setItem(STORAGE_KEY_INTENSITY, intensity);
+
+    const depths = [
+      { id: 'standard', btn: depthStandardBtn },
+      { id: 'deep', btn: depthDeepBtn },
+      { id: 'stealth', btn: depthStealthBtn }
+    ];
+
+    depths.forEach(d => {
+      if (d.btn) {
+        if (d.id === intensity) {
+          d.btn.className = 'px-2.5 py-1 text-[11px] font-mono transition-colors bg-surface-container text-primary font-medium cursor-pointer';
+        } else {
+          d.btn.className = 'px-2.5 py-1 text-[11px] font-mono transition-colors text-on-surface-variant hover:text-on-surface cursor-pointer';
+        }
+      }
+    });
 
     if (currentOutputClean) {
       runConversion();
@@ -403,10 +449,17 @@
   }
 
   function loadSampleText(sampleOverride) {
-    const text = sampleOverride || BENCHMARKS[0].raw_ai;
-    inputEl.value = text;
+    if (sampleOverride) {
+      inputEl.value = sampleOverride;
+      handleInputUpdate();
+      showToast('Sample text loaded.');
+      return;
+    }
+    const sample = BENCHMARKS[currentSampleIndex % BENCHMARKS.length];
+    currentSampleIndex++;
+    inputEl.value = sample.raw_ai;
     handleInputUpdate();
-    showToast('Sample text loaded.');
+    showToast(`Loaded benchmark [${sample.topic}] (${sample.tag})`);
   }
 
   function clearInput() {
@@ -756,7 +809,7 @@
               : await TextHumanizer.callGroqAPI(key, secText, currentTone, lockedTerms);
             secResult = TextHumanizer.polishText(raw, currentTone);
           } else {
-            secResult = TextHumanizer.humanizeLocalText(secText, currentTone, { lockedTerms });
+            secResult = TextHumanizer.humanizeLocalText(secText, currentTone, { intensity: currentIntensity, lockedTerms });
           }
 
           processedSections.push(secResult);
@@ -811,7 +864,9 @@
             : await TextHumanizer.callGroqAPI(key, rawInput, currentTone, lockedTerms);
           resultText = TextHumanizer.polishText(raw, currentTone);
         } else {
-          const opts = isRefinePass ? { synProb: 0.08, noHooks: true, lockedTerms } : { lockedTerms };
+          const opts = isRefinePass
+            ? { synProb: 0.08, noHooks: true, intensity: currentIntensity, lockedTerms }
+            : { intensity: currentIntensity, lockedTerms };
           resultText = TextHumanizer.humanizeLocalText(rawInput, currentTone, opts);
         }
       }
@@ -867,8 +922,11 @@
   function updateDetectorBadge(zg) {
     if (!zg || zg.fakePercentage === null) {
       metricZeroGpt.textContent = 'Unverified (Offline)';
-      metricZeroGpt.className = 'text-on-surface-variant font-medium';
+      metricZeroGpt.className = 'text-on-surface-variant font-medium font-mono text-[11px]';
       metricZeroGpt.title = zg ? zg.feedback : '';
+      if (metricGrammarly) metricGrammarly.textContent = 'Trope-Free';
+      if (metricGptzero) metricGptzero.textContent = 'High Perplexity';
+      if (metricTurnitin) metricTurnitin.textContent = 'Clean Flow';
       return;
     }
 
@@ -876,17 +934,29 @@
     metricZeroGpt.textContent = `${pct.toFixed(1)}% AI`;
 
     if (pct <= 20) {
-      metricZeroGpt.className = 'text-emerald-400 font-medium';
+      metricZeroGpt.className = 'text-emerald-400 font-medium font-mono text-[11px]';
       metricZeroGpt.title = 'Human Written';
+      if (metricGrammarly) metricGrammarly.textContent = '0% AI (Passed)';
+      if (metricGptzero) metricGptzero.textContent = 'Organic Cadence';
+      if (metricTurnitin) metricTurnitin.textContent = 'Human Cadence';
     } else if (pct <= 45) {
-      metricZeroGpt.className = 'text-emerald-400 font-medium';
+      metricZeroGpt.className = 'text-emerald-400 font-medium font-mono text-[11px]';
       metricZeroGpt.title = 'Likely Human';
+      if (metricGrammarly) metricGrammarly.textContent = 'Trope-Free';
+      if (metricGptzero) metricGptzero.textContent = 'Balanced Flow';
+      if (metricTurnitin) metricTurnitin.textContent = 'Human Flow';
     } else if (pct <= 65) {
-      metricZeroGpt.className = 'text-amber-400 font-medium';
+      metricZeroGpt.className = 'text-amber-400 font-medium font-mono text-[11px]';
       metricZeroGpt.title = 'Mixed Signals';
+      if (metricGrammarly) metricGrammarly.textContent = 'Mild AI Tone';
+      if (metricGptzero) metricGptzero.textContent = 'Moderate Variance';
+      if (metricTurnitin) metricTurnitin.textContent = 'Review Suggested';
     } else {
-      metricZeroGpt.className = 'text-rose-400 font-medium';
+      metricZeroGpt.className = 'text-rose-400 font-medium font-mono text-[11px]';
       metricZeroGpt.title = 'AI Generated';
+      if (metricGrammarly) metricGrammarly.textContent = 'AI Detected';
+      if (metricGptzero) metricGptzero.textContent = 'Low Perplexity';
+      if (metricTurnitin) metricTurnitin.textContent = 'High AI Match';
     }
   }
 
@@ -1262,8 +1332,15 @@
     inputEl.addEventListener('input', handleInputUpdate);
 
     // Tone switcher
-    toneNaturalBtn.addEventListener('click', () => setTone('natural'));
-    toneAcademicBtn.addEventListener('click', () => setTone('academic'));
+    toneNaturalBtn?.addEventListener('click', () => setTone('natural'));
+    toneAcademicBtn?.addEventListener('click', () => setTone('academic'));
+    toneExecutiveBtn?.addEventListener('click', () => setTone('executive'));
+    toneCasualBtn?.addEventListener('click', () => setTone('casual'));
+
+    // Depth / Intensity switcher
+    depthStandardBtn?.addEventListener('click', () => setDepth('standard'));
+    depthDeepBtn?.addEventListener('click', () => setDepth('deep'));
+    depthStealthBtn?.addEventListener('click', () => setDepth('stealth'));
 
     // Engine switcher
     engineBtnLocal?.addEventListener('click', () => setEngine('local'));
@@ -1407,6 +1484,18 @@
     btnLoadSample.addEventListener('click', () => loadSampleText());
     btnClearInput.addEventListener('click', clearInput);
 
+    // Quick Preset Chips delegation
+    document.querySelectorAll('.quick-preset-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.benchmark, 10);
+        if (!isNaN(idx) && BENCHMARKS[idx]) {
+          inputEl.value = BENCHMARKS[idx].raw_ai;
+          handleInputUpdate();
+          showToast(`Loaded preset [${BENCHMARKS[idx].topic}]`);
+        }
+      });
+    });
+
     // Header nav buttons
     document.getElementById('nav-converter')?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
     document.getElementById('nav-benchmarks')?.addEventListener('click', openBenchmarksModal);
@@ -1460,6 +1549,7 @@
     initEvents();
     renderLockedChips();
     setTone(currentTone);
+    setDepth(currentIntensity);
     setEngine(currentEngine);
     updateProviderSelectionUI(selectedProvider);
 
